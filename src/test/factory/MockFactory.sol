@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.20;
 
-import "../../interfaces/Ifactory.sol";
+import "../../interfaces/IFactory.sol";
 import "../engine/MockEngine.sol";
 
-contract MockFactory is Ifactory {
+contract MockFactory is IFactory {
     error SameTokenError();
     error ZeroAddressError();
 
-    /// @inheritdoc Ifactory
+    /// @inheritdoc IFactory
     uint256 public constant override MIN_LIQUIDITY_FACTOR = 6;
-    /// @inheritdoc Ifactory
+    /// @inheritdoc IFactory
     address public immutable override deployer;
     mapping(address => mapping(address => address)) public override getEngine;
 

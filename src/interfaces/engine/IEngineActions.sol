@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity >=0.5.0;
 
-/// @title  Action functions for the Primitive Engine contract
+/// @title  Action functions for the Engine contract
 /// @author Primitive
 interface IEngineActions {
     // ===== Pool Updates =====
@@ -86,7 +86,7 @@ interface IEngineActions {
     /// @param  delLiquidity  Amount of liquidity to remove
     /// @return delQuote      Amount of quote tokens received from removed liquidity
     /// @return delBase     Amount of base tokens received from removed liquidity
-    function remove(bytes32 poolId, uint256 delLiquidity) external returns (uint256 delquote, uint256 delbase);
+    function remove(bytes32 poolId, uint256 delLiquidity) external returns (uint256 delQuote, uint256 delBase);
 
     // ===== Swaps =====
 

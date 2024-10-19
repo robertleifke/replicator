@@ -107,13 +107,13 @@ contract Engine is IEngine {
     /// @notice Revert if expected amount does not exceed current balance
     function checkQuoteBalance(uint256 expectedQuote) private view {
         uint256 actualQuote = balanceQuote();
-        if (actualQuote < expectedQuote) revert QuoteBalanceError(expectedQuote, actualQuote);
+        if (actualQuote < expectedQuote) revert quoteBalanceError(expectedQuote, actualQuote);
     }
 
     /// @notice Revert if expected amount does not exceed current balance
     function checkBaseBalance(uint256 expectedBase) private view {
         uint256 actualBase = balanceBase();
-        if (actualBase < expectedBase) revert BaseBalanceError(expectedBase, actualBase);
+        if (actualBase < expectedBase) revert baseBalanceError(expectedBase, actualBase);
     }
 
     /// @return blockTimestamp casted as a uint32
@@ -147,7 +147,7 @@ contract Engine is IEngine {
         uint32 sigma,
         uint32 maturity,
         uint32 gamma,
-        uint256 QuotePerLp,
+        uint256 quotePerLp,
         uint256 delLiquidity,
         bytes calldata data
     )
@@ -166,7 +166,7 @@ contract Engine is IEngine {
         if (sigma > 1e7 || sigma < 1) revert SigmaError(sigma);
         if (strike == 0) revert StrikeError(strike);
         if (delLiquidity <= MIN_LIQUIDITY) revert MinLiquidityError(delLiquidity);
-        if (QuotePerLp > PRECISION / factor0 || QuotePerLp == 0) revert QuotePerLpError(QuotePerLp);
+        if (quotePerLp > PRECISION / factor0 || quotePerLp == 0) revert quotePerLpError(quotePerLp);
         if (gamma > Units.PERCENTAGE || gamma < 9000) revert GammaError(gamma);
 
         Calibration memory cal = Calibration({
@@ -179,8 +179,8 @@ contract Engine is IEngine {
 
         if (cal.lastTimestamp > cal.maturity) revert PoolExpiredError();
         uint32 tau = cal.maturity - cal.lastTimestamp; // time until expiry
-        delBase = ReplicationMath.getBaseGivenQuote(0, factor0, factor1, QuotePerLp, cal.strike, cal.sigma, tau);
-        delQuote = (QuotePerLp * delLiquidity) / PRECISION; // QuoteDecimals * 1e18 decimals / 1e18 = QuoteDecimals
+        delBase = ReplicationMath.getBaseGivenQuote(0, factor0, factor1, quotePerLp, cal.strike, cal.sigma, tau);
+        delQuote = (quotePerLp * delLiquidity) / PRECISION; // QuoteDecimals * 1e18 decimals / 1e18 = QuoteDecimals
         delBase = (delBase * delLiquidity) / PRECISION;
         if (delQuote == 0 || delBase == 0) revert CalibrationError(delQuote, delBase);
 
@@ -190,7 +190,7 @@ contract Engine is IEngine {
         reserves[poolId].allocate(delQuote, delBase, delLiquidity, cal.lastTimestamp); // state update
 
         (uint256 balQuote, uint256 balBase) = (balanceQuote(), balanceBase());
-        IPrimitiveCreateCallback(msg.sender).createCallback(delQuote, delBase, data);
+        ICreateCallback(msg.sender).createCallback(delQuote, delBase, data);
         checkQuoteBalance(balQuote + delQuote);
         checkBaseBalance(balBase + delBase);
 
@@ -213,7 +213,7 @@ contract Engine is IEngine {
         uint256 balBase;
         if (delQuote != 0) balQuote = balanceQuote();
         if (delBase != 0) balBase = balanceBase();
-        IPrimitiveDepositCallback(msg.sender).depositCallback(delQuote, delBase, data); // agnostic payment
+        IDepositCallback(msg.sender).depositCallback(delQuote, delBase, data); // agnostic payment
         if (delQuote != 0) checkQuoteBalance(balQuote + delQuote);
         if (delBase != 0) checkBaseBalance(balBase + delBase);
         emit Deposit(msg.sender, recipient, delQuote, delBase);
@@ -260,7 +260,7 @@ contract Engine is IEngine {
             margins.withdraw(delQuote, delBase); // removes tokens from `msg.sender` margin account
         } else {
             (uint256 balQuote, uint256 balBase) = (balanceQuote(), balanceBase());
-            IPrimitiveLiquidityCallback(msg.sender).allocateCallback(delQuote, delBase, data); // agnostic payment
+            ILiquidityCallback(msg.sender).allocateCallback(delQuote, delBase, data); // agnostic payment
             checkQuoteBalance(balQuote + delQuote);
             checkBaseBalance(balBase + delBase);
         }
@@ -289,7 +289,7 @@ contract Engine is IEngine {
 
     struct SwapDetails {
         address recipient;
-        bool QuoteForBase;
+        bool quoteForBase;
         bool fromMargin;
         bool toMargin;
         uint32 timestamp;
@@ -302,7 +302,7 @@ contract Engine is IEngine {
     function swap(
         address recipient,
         bytes32 poolId,
-        bool QuoteForBase,
+        bool quoteForBase,
         uint256 deltaIn,
         uint256 deltaOut,
         bool fromMargin,
@@ -317,7 +317,7 @@ contract Engine is IEngine {
             poolId: poolId,
             deltaIn: deltaIn,
             deltaOut: deltaOut,
-            QuoteForBase: QuoteForBase,
+            quoteForBase: quoteForBase,
             fromMargin: fromMargin,
             toMargin: toMargin,
             timestamp: _blockTimestamp()
@@ -336,7 +336,7 @@ contract Engine is IEngine {
 
             uint256 adjustedQuote;
             uint256 adjustedBase;
-            if (details.QuoteForBase) {
+            if (details.quoteForBase) {
                 adjustedQuote = uint256(reserve.reserveQuote) + deltaInWithFee;
                 adjustedBase = uint256(reserve.reserveBase) - deltaOut;
             } else {
@@ -357,10 +357,10 @@ contract Engine is IEngine {
             );
 
             if (invariantX64 > invariantAfter) revert InvariantError(invariantX64, invariantAfter);
-            reserve.swap(details.QuoteForBase, details.deltaIn, details.deltaOut, details.timestamp); // state update
+            reserve.swap(details.quoteForBase, details.deltaIn, details.deltaOut, details.timestamp); // state update
         }
 
-        if (details.QuoteForBase) {
+        if (details.quoteForBase) {
             if (details.toMargin) {
                 margins[details.recipient].deposit(0, details.deltaOut);
             } else {
@@ -371,7 +371,7 @@ contract Engine is IEngine {
                 margins.withdraw(details.deltaIn, 0); // pay for swap
             } else {
                 uint256 balQuote = balanceQuote();
-                IPrimitiveSwapCallback(msg.sender).swapCallback(details.deltaIn, 0, data); // agnostic transfer in
+                ISwapCallback(msg.sender).swapCallback(details.deltaIn, 0, data); // agnostic transfer in
                 checkQuoteBalance(balQuote + details.deltaIn);
             }
         } else {
@@ -385,7 +385,7 @@ contract Engine is IEngine {
                 margins.withdraw(0, details.deltaIn); // pay for swap
             } else {
                 uint256 balBase = balanceBase();
-                IPrimitiveSwapCallback(msg.sender).swapCallback(0, details.deltaIn, data); // agnostic transfer in
+                ISwapCallback(msg.sender).swapCallback(0, details.deltaIn, data); // agnostic transfer in
                 checkBaseBalance(balBase + details.deltaIn);
             }
         }
@@ -394,7 +394,7 @@ contract Engine is IEngine {
             msg.sender,
             details.recipient,
             details.poolId,
-            details.QuoteForBase,
+            details.quoteForBase,
             details.deltaIn,
             details.deltaOut
         );
@@ -406,12 +406,12 @@ contract Engine is IEngine {
     function invariantOf(bytes32 poolId) public view override returns (int128 invariant) {
         Calibration memory cal = calibrations[poolId];
         uint32 tau = cal.maturity - cal.lastTimestamp; // cal maturity can never be less than lastTimestamp
-        (uint256 QuotePerLiquidity, uint256 BasePerLiquidity) = reserves[poolId].getAmounts(PRECISION); // 1e18 liquidity
+        (uint256 quotePerLiquidity, uint256 basePerLiquidity) = reserves[poolId].getAmounts(PRECISION); // 1e18 liquidity
         invariant = ReplicationMath.calcInvariant(
             scaleFactorQuote,
             scaleFactorBase,
-            QuotePerLiquidity,
-            BasePerLiquidity,
+            quotePerLiquidity,
+            basePerLiquidity,
             cal.strike,
             cal.sigma,
             tau

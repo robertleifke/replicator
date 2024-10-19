@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.20;
 
-import "./interfaces/Ifactory.sol";
+import "./interfaces/IFactory.sol";
 import "./Engine.sol";
 
 /// @title   Primitive Factory
@@ -31,20 +31,20 @@ contract Factory is IFactory {
         uint256 minLiquidity;
     }
 
-    /// @inheritdoc Ifactory
+    /// @inheritdoc IFactory
     uint256 public constant override MIN_LIQUIDITY_FACTOR = 6;
-    /// @inheritdoc Ifactory
+    /// @inheritdoc IFactory
     address public immutable override deployer;
-    /// @inheritdoc Ifactory
+    /// @inheritdoc IFactory
     mapping(address => mapping(address => address)) public override getEngine;
-    /// @inheritdoc Ifactory
+    /// @inheritdoc IFactory
     Args public override args; // Used instead of an initializer in Engine contract
 
     constructor() {
         deployer = msg.sender;
     }
 
-    /// @inheritdoc Ifactory
+    /// @inheritdoc IFactory
     function deploy(address quote, address base) external override returns (address engine) {
         if (quote == base) revert SameTokenError();
         if (quote == address(0) || base == address(0)) revert ZeroAddressError();

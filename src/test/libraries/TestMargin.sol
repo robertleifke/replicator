@@ -18,29 +18,29 @@ contract TestMargin {
         return margins[msg.sender];
     }
 
-    /// @notice Adds to quote and riskless token balances
-    /// @param  delquote  The amount of quote tokens to add to margin
-    /// @param  delbase  The amount of base tokens to add to margin
+    /// @notice Adds to quote and base token balances
+    /// @param  delQuote  The amount of quote tokens to add to margin
+    /// @param  delBase  The amount of base tokens to add to margin
     /// @return The margin data storage item
-    function shouldDeposit(uint256 delquote, uint256 delbase) public returns (Margin.Data memory) {
-        uint128 preX = margins[msg.sender].balancequote;
-        uint128 preY = margins[msg.sender].balancebase;
-        margins[msg.sender].deposit(delquote, delbase);
-        assert(preX + delquote >= margins[msg.sender].balancequote);
-        assert(preY + delbase >= margins[msg.sender].balancebase);
+    function shouldDeposit(uint256 delQuote, uint256 delBase) public returns (Margin.Data memory) {
+        uint128 preX = margins[msg.sender].balanceQuote;
+        uint128 preY = margins[msg.sender].balanceBase;
+        margins[msg.sender].deposit(delQuote, delBase);
+        assert(preX + delQuote >= margins[msg.sender].balanceQuote);
+        assert(preY + delBase >= margins[msg.sender].balanceBase);
         return margins[msg.sender];
     }
 
-    /// @notice Removes quote and riskless token balance from `msg.sender`'s internal margin account
-    /// @param  delquote  The amount of quote tokens to add to margin
-    /// @param  delbase  The amount of base tokens to add to margin
+    /// @notice Removes quote and riskbaaless token balance from `msg.sender`'s internal margin account
+    /// @param  delQuote  The amount of quote tokens to add to margin
+    /// @param  delBase  The amount of base tokens to add to margin
     /// @return The margin data storage item
-    function shouldWithdraw(uint256 delquote, uint256 delbase) public returns (Margin.Data memory) {
-        uint128 preX = margins[msg.sender].balancequote;
-        uint128 preY = margins[msg.sender].balancebase;
-        margins[msg.sender] = margins.withdraw(delquote, delbase);
-        assert(preX - delquote >= margins[msg.sender].balancequote);
-        assert(preY - delbase >= margins[msg.sender].balancebase);
+    function shouldWithdraw(uint256 delQuote, uint256 delBase) public returns (Margin.Data memory) {
+        uint128 preX = margins[msg.sender].balanceQuote;
+        uint128 preY = margins[msg.sender].balanceBase;
+        margins[msg.sender] = margins.withdraw(delQuote, delBase);
+        assert(preX - delQuote >= margins[msg.sender].balanceQuote);
+        assert(preY - delBase >= margins[msg.sender].balanceBase);
         return margins[msg.sender];
     }
 }

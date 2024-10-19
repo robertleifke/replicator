@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity >=0.5.0;
 
-/// @title  Events of the Primitive Engine contract
+/// @title  Events of the Engine contract
 /// @author Primitive
 interface IEngineEvents {
     /// @notice             Creates a pool with liquidity
@@ -36,14 +36,14 @@ interface IEngineEvents {
     /// @param  recipient   Margin account recieving deposits
     /// @param  delQuote    Amount of quote tokens deposited
     /// @param  delBase   Amount of base tokens deposited
-    event Deposit(address indexed from, address indexed recipient, uint256 delquote, uint256 delbase);
+    event Deposit(address indexed from, address indexed recipient, uint256 delQuote, uint256 delBase);
 
     /// @notice             Removes base and/or quote from a margin account
     /// @param  from        Method caller `msg.sender`
     /// @param  recipient   Address that tokens are sent to
     /// @param  delQuote    Amount of quote tokens withdrawn
     /// @param  delBase   Amount of base tokens withdrawn
-    event Withdraw(address indexed from, address indexed recipient, uint256 delquote, uint256 delbase);
+    event Withdraw(address indexed from, address indexed recipient, uint256 delQuote, uint256 delBase);
 
     // ===== Liquidity =====
 
@@ -52,7 +52,7 @@ interface IEngineEvents {
     /// @param  recipient   Address that receives liquidity
     /// @param  poolId      Keccak256 hash of the engine address, strike, sigma, maturity, and gamma
     /// @param  delQuote    Amount of quote tokens deposited
-    /// @param  delBase   Amount of base tokens deposited
+    /// @param  delBase     Amount of base tokens deposited
     /// @param  delLiquidity Amount of liquidity granted to `recipient`
     event Allocate(
         address indexed from,

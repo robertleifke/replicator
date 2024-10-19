@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.20;
 
-import "../interfaces/Iengine.sol";
+import "../interfaces/IEngine.sol";
 import "../interfaces/IERC20.sol";
 import "./callbacks/TestAllocateCallback.sol";
 import "./callbacks/TestCreateCallback.sol";
@@ -21,11 +21,11 @@ abstract contract TestBase is TestAllocateCallback, TestCreateCallback, TestDepo
     }
 
     function quote() public view override(Scenarios) returns (address) {
-        return Iengine(engine).quote();
+        return IEngine(engine).quote();
     }
 
     function base() public view override(Scenarios) returns (address) {
-        return Iengine(engine).base();
+        return IEngine(engine).base();
     }
 
     function getCaller() public view override(Scenarios) returns (address) {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity >=0.5.0;
 
-/// @title  Primitive Liquidity Callback
+/// @title  Liquidity Callback
 /// @author Primitive
 interface ILiquidityCallback {
     /// @notice              Triggered when providing liquidity to an Engine

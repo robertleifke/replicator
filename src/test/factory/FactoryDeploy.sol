@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.20;
 
-import "../../interfaces/Ifactory.sol";
+import "../../interfaces/IFactory.sol";
 
 contract FactoryDeploy {
     address public factory;
@@ -13,7 +13,7 @@ contract FactoryDeploy {
     }
 
     function deploy(address quote, address base) public {
-        Ifactory(factory).deploy(quote, base);
+        IFactory(factory).deploy(quote, base);
     }
 
     function name() public pure returns (string memory) {

@@ -49,15 +49,15 @@ library ReplicationMath {
     ) internal pure returns (uint256 basePerLiquidity) {
         int128 strikeX64 = strike.scaleToX64(scaleFactorBase);
         int128 quoteX64 = quotePerLiquidity.scaleToX64(scaleFactorQuote); // mul by 2^64, div by precision
-        int128 oneMinusquoteX64 = ONE_INT.sub(quoteX64);
+        int128 oneMinusQuoteX64 = ONE_INT.sub(quoteX64);
         if (tau != 0) {
             int128 volX64 = getProportionalVolatility(sigma, tau);
-            int128 phi = oneMinusquoteX64.getInverseCDF();
+            int128 phi = oneMinusQuoteX64.getInverseCDF();
             int128 input = phi.sub(volX64);
             int128 baseX64 = strikeX64.mul(input.getCDF()).add(invariantLastX64);
             basePerLiquidity = baseX64.scaleFromX64(scaleFactorBase);
         } else {
-            basePerLiquidity = (strikeX64.mul(oneMinusquoteX64).add(invariantLastX64)).scaleFromX64(
+            basePerLiquidity = (strikeX64.mul(oneMinusQuoteX64).add(invariantLastX64)).scaleFromX64(
                 scaleFactorBase
             );
         }

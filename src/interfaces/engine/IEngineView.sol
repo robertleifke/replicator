@@ -34,10 +34,10 @@ interface IEngineView {
     function base() external view returns (address);
 
     /// @return Multiplier to scale amounts to/from, equal to 10^(18 - quoteDecimals)
-    function scaleFactorquote() external view returns (uint256);
+    function scaleFactorQuote() external view returns (uint256);
 
     /// @return Multiplier to scale amounts to/from, equal to 10^(18 - baseDecimals)
-    function scaleFactorbase() external view returns (uint256);
+    function scaleFactorBase() external view returns (uint256);
 
     // ===== Pool State =====
 

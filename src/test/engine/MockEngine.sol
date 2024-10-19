@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.20;
 
-import "../../engine.sol";
+import "../../Engine.sol";
 
-contract MockEngine is engine {
+contract MockEngine is Engine {
     uint256 public time = 1;
 
     function advanceTime(uint256 by) external {
@@ -30,7 +30,7 @@ contract MockEngine is engine {
         (uint256 curQuote, uint256 curBase) = (res.reserveQuote, res.reserveBase);
         int128 invariant = invariantOf(poolId);
         res.reserveQuote = SafeCast.toUint128(reserveQuote);
-        uint256 reserveBase = ReplicationMath.getbaseGivenQuote(
+        uint256 reserveBase = ReplicationMath.getBaseGivenQuote(
             invariant,
             scaleFactorQuote,
             scaleFactorBase,

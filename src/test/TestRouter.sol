@@ -30,7 +30,7 @@ contract TestRouter is TestBase {
         uint256 sigma,
         uint256 maturity,
         uint256 gamma,
-        uint256 QuotePerLp,
+        uint256 quotePerLp,
         uint256 delLiquidity,
         bytes calldata data
     ) public {
@@ -41,7 +41,7 @@ contract TestRouter is TestBase {
                 uint32(sigma),
                 uint32(maturity),
                 uint32(gamma),
-                QuotePerLp,
+                quotePerLp,
                 delLiquidity,
                 data
             )
@@ -232,7 +232,7 @@ contract TestRouter is TestBase {
     function swap(
         address recipient,
         bytes32 pid,
-        bool QuoteForBase,
+        bool quoteForBase,
         uint256 deltaIn,
         uint256 deltaOut,
         bool fromMargin,
@@ -240,7 +240,7 @@ contract TestRouter is TestBase {
         bytes calldata data
     ) public {
         caller = msg.sender;
-        IEngine(engine).swap(recipient, pid, QuoteForBase, deltaIn, deltaOut, fromMargin, toMargin, data);
+        IEngine(engine).swap(recipient, pid, quoteForBase, deltaIn, deltaOut, fromMargin, toMargin, data);
     }
 
     function getBaseOutGivenQuoteIn(bytes32 poolId, uint256 deltaIn) public view returns (uint256) {
@@ -265,32 +265,32 @@ contract TestRouter is TestBase {
         return deltaOut;
     }
 
-    /// @notice                 Uses BasePerLiquidity and invariant to calculate QuotePerLiquidity
+    /// @notice                 Uses basePerLiquidity and invariant to calculate quotePerLiquidity
     /// @dev                    Converts unsigned 256-bit values to fixed point 64.64 numbers w/ decimals of precision
     /// @param   invariantLastX64   Signed 64.64 fixed point number. Calculated w/ same `tau` as the parameter `tau`
     /// @param   scaleFactorQuote   Unsigned 256-bit integer scaling factor for `Quote`, 10^(18 - Quote.decimals())
     /// @param   scaleFactorBase  Unsigned 256-bit integer scaling factor for `Base`, 10^(18 - Base.decimals())
-    /// @param   BasePerLiquidity Unsigned 256-bit integer of Pool's Base reserves *per liquidity*, 0 <= x <= strike
+    /// @param   basePerLiquidity Unsigned 256-bit integer of Pool's Base reserves *per liquidity*, 0 <= x <= strike
     /// @param   strike         Unsigned 256-bit integer value with precision equal to 10^(18 - scaleFactorBase)
     /// @param   sigma          Volatility of the Pool as an unsigned 256-bit integer w/ precision of 1e4, 10000 = 100%
     /// @param   tau            Time until expiry in seconds as an unsigned 256-bit integer
-    /// @return  QuotePerLiquidity = 1 - CDF(CDF^-1((BasePerLiquidity - invariantLastX64)/K) + sigma*sqrt(tau))
+    /// @return  quotePerLiquidity = 1 - CDF(CDF^-1((basePerLiquidity - invariantLastX64)/K) + sigma*sqrt(tau))
     function getQuoteGivenBase(
         int128 invariantLastX64,
         uint256 scaleFactorQuote,
         uint256 scaleFactorBase,
-        uint256 BasePerLiquidity,
+        uint256 basePerLiquidity,
         uint256 strike,
         uint256 sigma,
         uint256 tau
-    ) internal pure returns (uint256 QuotePerLiquidity) {
+    ) internal pure returns (uint256 quotePerLiquidity) {
         int128 strikeX64 = strike.scaleToX64(scaleFactorBase);
         int128 volX64 = ReplicationMath.getProportionalVolatility(sigma, tau);
-        int128 BaseX64 = BasePerLiquidity.scaleToX64(scaleFactorBase);
-        int128 phi = BaseX64.sub(invariantLastX64).div(strikeX64).getInverseCDF();
+        int128 baseX64 = basePerLiquidity.scaleToX64(scaleFactorBase);
+        int128 phi = baseX64.sub(invariantLastX64).div(strikeX64).getInverseCDF();
         int128 input = phi.add(volX64);
-        int128 QuoteX64 = ReplicationMath.ONE_INT.sub(input.getCDF());
-        QuotePerLiquidity = QuoteX64.scaleFromX64(scaleFactorQuote);
+        int128 quoteX64 = ReplicationMath.ONE_INT.sub(input.getCDF());
+        quotePerLiquidity = quoteX64.scaleFromX64(scaleFactorQuote);
     }
 
     // note: this will probably revert because getQuoteGivenBase is not precise enough to return a valid swap

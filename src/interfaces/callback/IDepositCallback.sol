@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity >=0.5.0;
 
-/// @title  Primitive Deposit Callback
+/// @title  Deposit Callback
 /// @author Primitive
 interface IDepositCallback {
     /// @notice              Triggered when depositing tokens to an Engine

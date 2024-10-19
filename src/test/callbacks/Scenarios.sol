@@ -7,8 +7,8 @@ abstract contract Scenarios {
     enum Scenario {
         FAIL,
         SUCCESS,
-        quote_ONLY,
-        base_ONLY,
+        QUOTE_ONLY,
+        BASE_ONLY,
         REENTRANCY
     }
 
