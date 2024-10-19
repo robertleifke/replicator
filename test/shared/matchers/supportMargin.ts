@@ -14,32 +14,32 @@ async function getMarginChange(
   return { after, before }
 }
 
-// Chai matchers for the margins of the PrimitiveEngine
+// Chai matchers for the margins of the engine
 
 export default function supportMargin(Assertion: Chai.AssertionStatic) {
   Assertion.addMethod(
     'increaseMargin',
-    async function (this: any, engine: EngineTypes, account: string, delRisky: BigNumber, delStable: BigNumber) {
+    async function (this: any, engine: EngineTypes, account: string, delquote: BigNumber, delbase: BigNumber) {
       const subject = this._obj
 
       const derivedPromise = Promise.all([getMarginChange(subject, engine, account)]).then(([{ after, before }]) => {
-        const expectedRisky = before.balanceRisky.add(delRisky) // INCREASE
-        const expectedStable = before.balanceStable.add(delStable) // INCREASE
+        const expectedquote = before.balancequote.add(delquote) // INCREASE
+        const expectedbase = before.balancebase.add(delbase) // INCREASE
 
         this.assert(
-          after.balanceRisky.eq(expectedRisky),
-          `Expected ${after.balanceRisky} to be ${expectedRisky}`,
-          `Expected ${after.balanceRisky} NOT to be ${expectedRisky}`,
-          expectedRisky,
-          after.balanceRisky
+          after.balancequote.eq(expectedquote),
+          `Expected ${after.balancequote} to be ${expectedquote}`,
+          `Expected ${after.balancequote} NOT to be ${expectedquote}`,
+          expectedquote,
+          after.balancequote
         )
 
         this.assert(
-          after.balanceStable.eq(expectedStable),
-          `Expected ${after.balanceStable} to be ${expectedStable}`,
-          `Expected ${after.balanceStable} NOT to be ${expectedStable}`,
-          expectedStable,
-          after.balanceStable
+          after.balancebase.eq(expectedbase),
+          `Expected ${after.balancebase} to be ${expectedbase}`,
+          `Expected ${after.balancebase} NOT to be ${expectedbase}`,
+          expectedbase,
+          after.balancebase
         )
       })
 
@@ -52,27 +52,27 @@ export default function supportMargin(Assertion: Chai.AssertionStatic) {
 
   Assertion.addMethod(
     'decreaseMargin',
-    async function (this: any, engine: EngineTypes, account: string, delRisky: BigNumber, delStable: BigNumber) {
+    async function (this: any, engine: EngineTypes, account: string, delquote: BigNumber, delbase: BigNumber) {
       const subject = this._obj
 
       const derivedPromise = Promise.all([getMarginChange(subject, engine, account)]).then(([{ after, before }]) => {
-        const expectedRisky = before.balanceRisky.sub(delRisky) // DECREASE
-        const expectedStable = before.balanceStable.sub(delStable) // DECREASE
+        const expectedquote = before.balancequote.sub(delquote) // DECREASE
+        const expectedbase = before.balancebase.sub(delbase) // DECREASE
 
         this.assert(
-          after.balanceRisky.eq(expectedRisky),
-          `Expected ${after.balanceRisky} to be ${expectedRisky}`,
-          `Expected ${after.balanceRisky} NOT to be ${expectedRisky}`,
-          expectedRisky,
-          after.balanceRisky
+          after.balancequote.eq(expectedquote),
+          `Expected ${after.balancequote} to be ${expectedquote}`,
+          `Expected ${after.balancequote} NOT to be ${expectedquote}`,
+          expectedquote,
+          after.balancequote
         )
 
         this.assert(
-          after.balanceStable.eq(expectedStable),
-          `Expected ${after.balanceStable} to be ${expectedStable}`,
-          `Expected ${after.balanceStable} NOT to be ${expectedStable}`,
-          expectedStable,
-          after.balanceStable
+          after.balancebase.eq(expectedbase),
+          `Expected ${after.balancebase} to be ${expectedbase}`,
+          `Expected ${after.balancebase} NOT to be ${expectedbase}`,
+          expectedbase,
+          after.balancebase
         )
       })
 

@@ -1,7 +1,7 @@
 import hre, { ethers } from 'hardhat'
 import { parseWei } from 'web3-units'
 import { constants, BigNumber, Wallet } from 'ethers'
-import { getStableGivenRisky } from '@primitivefi/rmm-math'
+import { getbaseGivenquote } from '@primitivefi/rmm-math'
 
 import expect from '../../../shared/expect'
 import { parseCalibration } from '../../../shared'
@@ -16,7 +16,7 @@ const { HashZero } = constants
 
 TestPools.forEach(function (pool: PoolState) {
   testContext(`create ${pool.description} pool`, function () {
-    const { strike, sigma, maturity, lastTimestamp, gamma, delta, referencePrice, decimalsRisky, decimalsStable } =
+    const { strike, sigma, maturity, lastTimestamp, gamma, delta, referencePrice, decimalsquote, decimalsbase } =
       pool.calibration
     let poolId: string
     const delLiquidity = parseWei('1', 18)
@@ -33,8 +33,8 @@ TestPools.forEach(function (pool: PoolState) {
     beforeEach(async function () {
       const fixture = await loadFixture(engineFixture)
       const { factory, factoryDeploy, router } = fixture
-      const { engine, risky, stable } = await fixture.createEngine(decimalsRisky, decimalsStable)
-      this.contracts = { factory, factoryDeploy, router, engine, risky, stable }
+      const { engine, quote, base } = await fixture.createEngine(decimalsquote, decimalsbase)
+      this.contracts = { factory, factoryDeploy, router, engine, quote, base }
 
       await useTokens(this.signers[0], this.contracts, pool.calibration)
       await useApproveAll(this.signers[0], this.contracts)
@@ -49,7 +49,7 @@ TestPools.forEach(function (pool: PoolState) {
             sigma.raw,
             maturity.raw,
             gamma.raw,
-            parseWei(1, decimalsRisky).sub(parseWei(delta, decimalsRisky)).raw,
+            parseWei(1, decimalsquote).sub(parseWei(delta, decimalsquote)).raw,
             delLiquidity.raw,
             HashZero
           )
@@ -63,33 +63,33 @@ TestPools.forEach(function (pool: PoolState) {
             sigma.raw,
             maturity.raw,
             gamma.raw,
-            parseWei(1, decimalsRisky).sub(parseWei(delta, decimalsRisky)).raw,
+            parseWei(1, decimalsquote).sub(parseWei(delta, decimalsquote)).raw,
             delLiquidity.raw,
             HashZero
           )
         ).to.increaseReserveLiquidity(this.contracts.engine, poolId, delLiquidity.raw)
       })
 
-      it('res.allocate: increases reserve risky', async function () {
-        const delRisky = parseWei(1 - delta, decimalsRisky)
+      it('res.allocate: increases reserve quote', async function () {
+        const delquote = parseWei(1 - delta, decimalsquote)
         await expect(() =>
           this.contracts.router.create(
             strike.raw,
             sigma.raw,
             maturity.raw,
             gamma.raw,
-            parseWei(1, decimalsRisky).sub(parseWei(delta, decimalsRisky)).raw,
+            parseWei(1, decimalsquote).sub(parseWei(delta, decimalsquote)).raw,
             delLiquidity.raw,
             HashZero
           )
-        ).to.increaseReserveRisky(this.contracts.engine, poolId, delRisky.raw)
+        ).to.increaseReservequote(this.contracts.engine, poolId, delquote.raw)
       })
 
-      it('res.allocate: increases reserve stable', async function () {
-        const delRisky = parseWei(1 - delta, decimalsRisky)
-        const delStable = parseWei(
-          getStableGivenRisky(delRisky.float, strike.float, sigma.float, maturity.sub(lastTimestamp).years),
-          decimalsStable
+      it('res.allocate: increases reserve base', async function () {
+        const delquote = parseWei(1 - delta, decimalsquote)
+        const delbase = parseWei(
+          getbaseGivenquote(delquote.float, strike.float, sigma.float, maturity.sub(lastTimestamp).years),
+          decimalsbase
         )
         await expect(() =>
           this.contracts.router.create(
@@ -97,11 +97,11 @@ TestPools.forEach(function (pool: PoolState) {
             sigma.raw,
             maturity.raw,
             gamma.raw,
-            parseWei(1, decimalsRisky).sub(parseWei(delta, decimalsRisky)).raw,
+            parseWei(1, decimalsquote).sub(parseWei(delta, decimalsquote)).raw,
             delLiquidity.raw,
             HashZero
           )
-        ).to.increaseReserveStable(this.contracts.engine, poolId, delStable.raw)
+        ).to.increaseReservebase(this.contracts.engine, poolId, delbase.raw)
       })
 
       it('res.allocate: update block timestamp', async function () {
@@ -111,7 +111,7 @@ TestPools.forEach(function (pool: PoolState) {
             sigma.raw,
             maturity.raw,
             gamma.raw,
-            parseWei(1, decimalsRisky).sub(parseWei(delta, decimalsRisky)).raw,
+            parseWei(1, decimalsquote).sub(parseWei(delta, decimalsquote)).raw,
             delLiquidity.raw,
             HashZero
           )
@@ -125,7 +125,7 @@ TestPools.forEach(function (pool: PoolState) {
             sigma.raw,
             maturity.raw,
             gamma.raw,
-            parseWei(1, decimalsRisky).sub(parseWei(delta, decimalsRisky)).raw,
+            parseWei(1, decimalsquote).sub(parseWei(delta, decimalsquote)).raw,
             delLiquidity.raw,
             HashZero
           )
@@ -144,7 +144,7 @@ TestPools.forEach(function (pool: PoolState) {
             sigma.raw,
             maturity.raw,
             gamma.raw,
-            parseWei(1, decimalsRisky).sub(parseWei(delta, decimalsRisky)).raw,
+            parseWei(1, decimalsquote).sub(parseWei(delta, decimalsquote)).raw,
             delLiquidity.raw,
             HashZero
           )
@@ -157,7 +157,7 @@ TestPools.forEach(function (pool: PoolState) {
           sigma.raw,
           maturity.raw,
           gamma.raw,
-          parseWei(1, decimalsRisky).sub(parseWei(delta, decimalsRisky)).raw,
+          parseWei(1, decimalsquote).sub(parseWei(delta, decimalsquote)).raw,
           delLiquidity.raw,
           HashZero
         )
@@ -166,12 +166,12 @@ TestPools.forEach(function (pool: PoolState) {
 
         const reserve = await this.contracts.engine.reserves(poolId)
 
-        expect(reserve.reserveRisky).to.not.equal(0)
-        expect(reserve.reserveStable).to.not.equal(0)
+        expect(reserve.reservequote).to.not.equal(0)
+        expect(reserve.reservebase).to.not.equal(0)
         expect(reserve.liquidity).to.equal(parseWei(1).raw)
         expect(reserve.cumulativeLiquidity).to.equal(0)
-        expect(reserve.cumulativeRisky).to.equal(0)
-        expect(reserve.cumulativeStable).to.equal(0)
+        expect(reserve.cumulativequote).to.equal(0)
+        expect(reserve.cumulativebase).to.equal(0)
         expect(reserve.blockTimestamp).to.equal(timestamp)
       })
 
@@ -182,7 +182,7 @@ TestPools.forEach(function (pool: PoolState) {
             sigma.raw,
             maturity.raw,
             gamma.raw,
-            parseWei(1, decimalsRisky).sub(parseWei(delta, decimalsRisky)).raw,
+            parseWei(1, decimalsquote).sub(parseWei(delta, decimalsquote)).raw,
             delLiquidity.raw,
             HashZero
           )
@@ -201,7 +201,7 @@ TestPools.forEach(function (pool: PoolState) {
           sigma.raw,
           maturity.raw,
           gamma.raw,
-          parseWei(1, decimalsRisky).sub(parseWei(delta, decimalsRisky)).raw,
+          parseWei(1, decimalsquote).sub(parseWei(delta, decimalsquote)).raw,
           delLiquidity.raw,
           HashZero
         )
@@ -214,7 +214,7 @@ TestPools.forEach(function (pool: PoolState) {
             sigma.raw,
             maturity.raw,
             gamma.raw,
-            parseWei(1, decimalsRisky).sub(parseWei(delta, decimalsRisky)).raw,
+            parseWei(1, decimalsquote).sub(parseWei(delta, decimalsquote)).raw,
             delLiquidity.raw,
             HashZero
           )
@@ -280,7 +280,7 @@ TestPools.forEach(function (pool: PoolState) {
             sigma.raw,
             maturity.raw,
             gamma.raw,
-            parseWei(1, decimalsRisky).sub(parseWei(delta, decimalsRisky)).raw,
+            parseWei(1, decimalsquote).sub(parseWei(delta, decimalsquote)).raw,
             delLiquidity.raw,
             HashZero
           )
@@ -295,7 +295,7 @@ TestPools.forEach(function (pool: PoolState) {
             iv,
             maturity.raw,
             gamma.raw,
-            parseWei(1, decimalsRisky).sub(parseWei(delta, decimalsRisky)).raw,
+            parseWei(1, decimalsquote).sub(parseWei(delta, decimalsquote)).raw,
             delLiquidity.raw,
             HashZero
           )
@@ -310,7 +310,7 @@ TestPools.forEach(function (pool: PoolState) {
             iv,
             maturity.raw,
             gamma.raw,
-            parseWei(1, decimalsRisky).sub(parseWei(delta, decimalsRisky)).raw,
+            parseWei(1, decimalsquote).sub(parseWei(delta, decimalsquote)).raw,
             delLiquidity.raw,
             HashZero
           )
@@ -325,7 +325,7 @@ TestPools.forEach(function (pool: PoolState) {
             sigma.raw,
             maturity.raw,
             tenThousand + 1,
-            parseWei(1, decimalsRisky).sub(parseWei(delta, decimalsRisky)).raw,
+            parseWei(1, decimalsquote).sub(parseWei(delta, decimalsquote)).raw,
             delLiquidity.raw,
             HashZero
           )
@@ -337,7 +337,7 @@ TestPools.forEach(function (pool: PoolState) {
             sigma.raw,
             maturity.raw,
             tenThousand + 1,
-            parseWei(1, decimalsRisky).sub(parseWei(delta, decimalsRisky)).raw,
+            parseWei(1, decimalsquote).sub(parseWei(delta, decimalsquote)).raw,
             delLiquidity.raw,
             HashZero
           )
@@ -352,7 +352,7 @@ TestPools.forEach(function (pool: PoolState) {
             sigma.raw,
             maturity.raw,
             nineThousand - 1,
-            parseWei(1, decimalsRisky).sub(parseWei(delta, decimalsRisky)).raw,
+            parseWei(1, decimalsquote).sub(parseWei(delta, decimalsquote)).raw,
             delLiquidity.raw,
             HashZero
           )

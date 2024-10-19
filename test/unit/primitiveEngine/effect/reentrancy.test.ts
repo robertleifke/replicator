@@ -13,7 +13,7 @@ const { HashZero } = constants
 
 TestPools.forEach(function (pool: PoolState) {
   testContext(`reentrancy attacks on ${pool.description} pool`, function () {
-    const { decimalsRisky, decimalsStable } = pool.calibration
+    const { decimalsquote, decimalsbase } = pool.calibration
     let poolId: string
 
     let loadFixture: ReturnType<typeof createFixtureLoader>
@@ -26,8 +26,8 @@ TestPools.forEach(function (pool: PoolState) {
     beforeEach(async function () {
       const fixture = await loadFixture(engineFixture)
       const { factory, factoryDeploy, router } = fixture
-      const { engine, risky, stable } = await fixture.createEngine(decimalsRisky, decimalsStable)
-      this.contracts = { factory, factoryDeploy, router, engine, risky, stable }
+      const { engine, quote, base } = await fixture.createEngine(decimalsquote, decimalsbase)
+      this.contracts = { factory, factoryDeploy, router, engine, quote, base }
 
       await useTokens(this.signers[0], this.contracts, pool.calibration)
       await useApproveAll(this.signers[0], this.contracts)
@@ -52,14 +52,14 @@ TestPools.forEach(function (pool: PoolState) {
       it('reverts the transaction', async function () {
         const amount = parseWei('1')
         const res = await this.contracts.engine.reserves(poolId)
-        const delRisky = amount.mul(res.reserveRisky).div(res.liquidity)
-        const delStable = amount.mul(res.reserveStable).div(res.liquidity)
+        const delquote = amount.mul(res.reservequote).div(res.liquidity)
+        const delbase = amount.mul(res.reservebase).div(res.liquidity)
         await expect(
           this.contracts.router.allocateFromExternalReentrancy(
             poolId,
             this.signers[0].address,
-            delRisky.raw,
-            delStable.raw,
+            delquote.raw,
+            delbase.raw,
             HashZero
           )
         ).to.be.reverted

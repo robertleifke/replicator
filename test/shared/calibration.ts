@@ -19,16 +19,16 @@ export function parseCalibration(
   gamma: number,
   lastTimestamp: number,
   referencePrice = 0,
-  decimalsRisky = 18,
-  decimalsStable = 18
+  decimalsquote = 18,
+  decimalsbase = 18
 ): Calibration {
   const cal = {
-    strike: parseWei(strike, decimalsStable),
+    strike: parseWei(strike, decimalsbase),
     sigma: parsePercentage(sigma),
     maturity: new Time(maturity), // in seconds, because `block.timestamp` is in seconds
     lastTimestamp: new Time(lastTimestamp), // in seconds, because `block.timestamp` is in seconds
     gamma: parsePercentage(gamma),
-    referencePrice: parseWei(referencePrice, decimalsStable),
+    referencePrice: parseWei(referencePrice, decimalsbase),
   }
   return new Calibration(
     cal.strike,
@@ -37,8 +37,8 @@ export function parseCalibration(
     cal.lastTimestamp,
     cal.referencePrice,
     cal.gamma,
-    decimalsRisky,
-    decimalsStable
+    decimalsquote,
+    decimalsbase
   )
 }
 
@@ -46,7 +46,7 @@ export function parseCalibration(
  * @notice Calibration Struct; Class representation of each Curve's parameters
  */
 export class Calibration {
-  /** Strike price with the same precision as the stable asset. */
+  /** Strike price with the same precision as the base asset. */
   readonly strike: Wei
 
   /** Volatility as a Percentage instance with 4 precision. */
@@ -61,14 +61,14 @@ export class Calibration {
   /** Time until expiry is calculated from the difference of current timestamp and this. */
   public readonly lastTimestamp: Time
 
-  /** Price of risky token in stable token units with precision stable decimals. */
+  /** Price of quote token in base token units with precision base decimals. */
   public readonly referencePrice: Wei
 
-  /** Decimals of risky asset. */
-  public readonly decimalsRisky: number
+  /** Decimals of quote asset. */
+  public readonly decimalsquote: number
 
-  /** Decimals of stable asset. */
-  public readonly decimalsStable: number
+  /** Decimals of base asset. */
+  public readonly decimalsbase: number
 
   /**
    *
@@ -76,7 +76,7 @@ export class Calibration {
    * @param sigma           Volatility percentage as a float, e.g. 1 = 100%
    * @param maturity        Timestamp in seconds
    * @param lastTimestamp   Timestamp in seconds
-   * @param referencePrice  Value of risky asset in units of stable asset
+   * @param referencePrice  Value of quote asset in units of base asset
    */
   constructor(
     strike: Wei,
@@ -85,8 +85,8 @@ export class Calibration {
     lastTimestamp: Time,
     referencePrice: Wei,
     gamma: Percentage,
-    decimalsRisky: number = 18,
-    decimalsStable: number = 18
+    decimalsquote: number = 18,
+    decimalsbase: number = 18
   ) {
     this.strike = strike
     this.sigma = sigma
@@ -94,26 +94,26 @@ export class Calibration {
     this.lastTimestamp = lastTimestamp
     this.referencePrice = referencePrice
     this.gamma = gamma
-    this.decimalsRisky = decimalsRisky
-    this.decimalsStable = decimalsStable
+    this.decimalsquote = decimalsquote
+    this.decimalsbase = decimalsbase
   }
 
   /**
-   * @notice Scaling factor of risky asset, 18 - risky decimals
+   * @notice Scaling factor of quote asset, 18 - quote decimals
    */
-  get scaleFactorRisky(): number {
-    return Math.pow(10, 18 - this.decimalsRisky)
+  get scaleFactorquote(): number {
+    return Math.pow(10, 18 - this.decimalsquote)
   }
 
   /**
-   * @notice Scaling factor of stable asset, 18 - stable decimals
+   * @notice Scaling factor of base asset, 18 - base decimals
    */
-  get scaleFactorStable(): number {
-    return Math.pow(10, 18 - this.decimalsStable)
+  get scaleFactorbase(): number {
+    return Math.pow(10, 18 - this.decimalsbase)
   }
 
   get MIN_LIQUIDITY(): number {
-    return (this.decimalsStable > this.decimalsRisky ? this.decimalsRisky : this.decimalsStable) / 6
+    return (this.decimalsbase > this.decimalsquote ? this.decimalsquote : this.decimalsbase) / 6
   }
 
   /**

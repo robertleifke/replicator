@@ -14,7 +14,7 @@ import { bytecode } from '../../../../artifacts/contracts/test/engine/MockEngine
 
 TestPools.forEach(function (pool: PoolState) {
   testContext(`deploy engines`, function () {
-    const { decimalsRisky, decimalsStable } = pool.calibration
+    const { decimalsquote, decimalsbase } = pool.calibration
 
     let loadFixture: ReturnType<typeof createFixtureLoader>
     let signer: Wallet, other: Wallet
@@ -26,8 +26,8 @@ TestPools.forEach(function (pool: PoolState) {
     beforeEach(async function () {
       const fixture = await loadFixture(engineFixture)
       const { factory, factoryDeploy, router } = fixture
-      const { engine, risky, stable } = await fixture.createEngine(decimalsRisky, decimalsStable)
-      this.contracts = { factory, factoryDeploy, router, engine, risky, stable }
+      const { engine, quote, base } = await fixture.createEngine(decimalsquote, decimalsbase)
+      this.contracts = { factory, factoryDeploy, router, engine, quote, base }
       await useTokens(this.signers[0], this.contracts, pool.calibration)
       await useApproveAll(this.signers[0], this.contracts)
       await usePool(this.signers[0], this.contracts, pool.calibration)
@@ -41,53 +41,53 @@ TestPools.forEach(function (pool: PoolState) {
         deployer = this.signers[0]
       })
 
-      it('deploys a new PrimitiveEngine', async function () {
-        let mockRisky = await deployMockContract(deployer, TestToken)
-        let mockStable = await deployMockContract(deployer, TestToken)
-        await mockRisky.mock.decimals.returns(18)
-        await mockStable.mock.decimals.returns(18)
-        expect(await this.contracts.factory.getEngine(mockRisky.address, mockStable.address)).to.equal(
+      it('deploys a new engine', async function () {
+        let mockquote = await deployMockContract(deployer, TestToken)
+        let mockbase = await deployMockContract(deployer, TestToken)
+        await mockquote.mock.decimals.returns(18)
+        await mockbase.mock.decimals.returns(18)
+        expect(await this.contracts.factory.getEngine(mockquote.address, mockbase.address)).to.equal(
           constants.AddressZero
         )
-        await this.contracts.factoryDeploy.deploy(mockRisky.address, mockStable.address)
+        await this.contracts.factoryDeploy.deploy(mockquote.address, mockbase.address)
       })
 
       it('emits the DeployEngine event', async function () {
         const [deployer] = this.signers
 
-        let mockRisky = await deployMockContract(deployer, TestToken)
-        let mockStable = await deployMockContract(deployer, TestToken)
-        await mockRisky.mock.decimals.returns(18)
-        await mockStable.mock.decimals.returns(18)
+        let mockquote = await deployMockContract(deployer, TestToken)
+        let mockbase = await deployMockContract(deployer, TestToken)
+        await mockquote.mock.decimals.returns(18)
+        await mockbase.mock.decimals.returns(18)
         const engineAddress = computeEngineAddress(
           this.contracts.factory.address,
-          mockRisky.address,
-          mockStable.address,
+          mockquote.address,
+          mockbase.address,
           bytecode
         )
 
-        await expect(this.contracts.factoryDeploy.deploy(mockRisky.address, mockStable.address))
+        await expect(this.contracts.factoryDeploy.deploy(mockquote.address, mockbase.address))
           .to.emit(this.contracts.factory, 'DeployEngine')
-          .withArgs(this.contracts.factoryDeploy.address, mockRisky.address, mockStable.address, engineAddress)
+          .withArgs(this.contracts.factoryDeploy.address, mockquote.address, mockbase.address, engineAddress)
       })
     })
 
     describe('when the parameters are invalid', function () {
       it('reverts when tokens are the same', async function () {
         await expect(
-          this.contracts.factoryDeploy.deploy(this.contracts.risky.address, this.contracts.risky.address)
+          this.contracts.factoryDeploy.deploy(this.contracts.quote.address, this.contracts.quote.address)
         ).to.be.revertedWith('SameTokenError()')
       })
 
-      it('reverts when the risky asset is address 0', async function () {
+      it('reverts when the quote asset is address 0', async function () {
         await expect(
-          this.contracts.factoryDeploy.deploy(constants.AddressZero, this.contracts.stable.address)
+          this.contracts.factoryDeploy.deploy(constants.AddressZero, this.contracts.base.address)
         ).to.be.revertedWith('ZeroAddressError()')
       })
 
-      it('reverts when the stable asset is address 0', async function () {
+      it('reverts when the base asset is address 0', async function () {
         await expect(
-          this.contracts.factoryDeploy.deploy(this.contracts.risky.address, constants.AddressZero)
+          this.contracts.factoryDeploy.deploy(this.contracts.quote.address, constants.AddressZero)
         ).to.be.revertedWith('ZeroAddressError()')
       })
     })

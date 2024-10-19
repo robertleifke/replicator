@@ -11,7 +11,7 @@ import { createFixtureLoader } from 'ethereum-waffle'
 
 TestPools.forEach(function (pool: PoolState) {
   testContext(`margins of ${pool.description} pool`, function () {
-    const { decimalsRisky, decimalsStable } = pool.calibration
+    const { decimalsquote, decimalsbase } = pool.calibration
 
     let loadFixture: ReturnType<typeof createFixtureLoader>
     let signer: Wallet, other: Wallet
@@ -23,8 +23,8 @@ TestPools.forEach(function (pool: PoolState) {
     beforeEach(async function () {
       const fixture = await loadFixture(engineFixture)
       const { factory, factoryDeploy, router } = fixture
-      const { engine, risky, stable } = await fixture.createEngine(decimalsRisky, decimalsStable)
-      this.contracts = { factory, factoryDeploy, router, engine, risky, stable }
+      const { engine, quote, base } = await fixture.createEngine(decimalsquote, decimalsbase)
+      this.contracts = { factory, factoryDeploy, router, engine, quote, base }
 
       await useTokens(this.signers[0], this.contracts, pool.calibration)
       await useApproveAll(this.signers[0], this.contracts)

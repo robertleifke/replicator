@@ -18,17 +18,17 @@ TestPools.forEach(function (pool: PoolState) {
     beforeEach(async function () {
       const fixture = await loadFixture(engineFixture)
       const { factory, factoryDeploy, router } = fixture
-      const { engine, risky, stable } = await fixture.createEngine(18, 18)
-      this.contracts = { factory, factoryDeploy, router, engine, risky, stable }
+      const { engine, quote, base } = await fixture.createEngine(18, 18)
+      this.contracts = { factory, factoryDeploy, router, engine, quote, base }
     })
 
     describe('when the contract is deployed', function () {
-      it('has the risky', async function () {
-        expect(await this.contracts.engine.risky()).to.equal(this.contracts.risky.address)
+      it('has the quote', async function () {
+        expect(await this.contracts.engine.quote()).to.equal(this.contracts.quote.address)
       })
 
-      it('has the stable', async function () {
-        expect(await this.contracts.engine.stable()).to.equal(this.contracts.stable.address)
+      it('has the base', async function () {
+        expect(await this.contracts.engine.base()).to.equal(this.contracts.base.address)
       })
 
       it('has the factory', async function () {

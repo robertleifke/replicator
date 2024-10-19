@@ -25,7 +25,7 @@ export async function usePool(
   debug: boolean = false
 ): Promise<UsePool> {
   /// get the parameters from the config
-  const { strike, sigma, maturity, delta, gamma, decimalsRisky } = config
+  const { strike, sigma, maturity, delta, gamma, decimalsquote } = config
 
   /// call create on the router contract
   let tx: any
@@ -37,7 +37,7 @@ export async function usePool(
         sigma.raw,
         maturity.raw,
         gamma.raw,
-        parseWei(1, decimalsRisky).sub(parseWei(delta, decimalsRisky)).raw,
+        parseWei(1, decimalsquote).sub(parseWei(delta, decimalsquote)).raw,
         parseWei('1', 18).raw,
         HashZero
       )
@@ -59,7 +59,7 @@ export async function usePool(
   const res = await contracts.engine.reserves(poolId)
 
   if (debug)
-    console.log(`Created with reserves risky: ${res.reserveRisky.toString()} stable: ${res.reserveStable.toString()}`)
+    console.log(`Created with reserves quote: ${res.reservequote.toString()} base: ${res.reservebase.toString()}`)
 
   return { tx, poolId }
 }
@@ -74,14 +74,14 @@ export async function useLiquidity(
   const poolId = config.poolId(contracts.engine.address)
   const amount = parseWei('1000', 18)
   const res = await contracts.engine.reserves(poolId)
-  const delRisky = amount.mul(res.reserveRisky).div(res.liquidity)
-  const delStable = amount.mul(res.reserveStable).div(res.liquidity)
+  const delquote = amount.mul(res.reservequote).div(res.liquidity)
+  const delbase = amount.mul(res.reservebase).div(res.liquidity)
   /// call create on the router contract
   let tx: any
   try {
     tx = await contracts.router
       .connect(signer)
-      .allocateFromExternal(poolId, target, delRisky.raw, delStable.raw, HashZero)
+      .allocateFromExternal(poolId, target, delquote.raw, delbase.raw, HashZero)
   } catch (err) {
     console.log(`\n   Error thrown on attempting to call allocateFromExternal() on the router`)
   }
@@ -95,20 +95,20 @@ export async function useLiquidity(
 export async function useMargin(
   signer: Wallet,
   contracts: Contracts,
-  delRisky: Wei,
-  delStable: Wei,
+  delquote: Wei,
+  delbase: Wei,
   target: string = signer.address,
   debug = false
 ): Promise<{ tx: any }> {
   /// call create on the router contract
   let tx: any
   try {
-    tx = await contracts.router.connect(signer).deposit(target, delRisky.raw, delStable.raw, HashZero)
+    tx = await contracts.router.connect(signer).deposit(target, delquote.raw, delbase.raw, HashZero)
   } catch (err) {
     console.log(`\n   Error thrown on attempting to call deposit() on the router`)
   }
 
-  if (debug) console.log(`   Deposited margin acc: ${target.slice(0, 6)},  ${delRisky.float} ${delStable.float}`)
+  if (debug) console.log(`   Deposited margin acc: ${target.slice(0, 6)},  ${delquote.float} ${delbase.float}`)
   return { tx }
 }
 
@@ -120,21 +120,21 @@ export async function useTokens(
   debug: boolean = false
 ): Promise<{ tx: any }> {
   // if config precision is not 18, set the tokens to it
-  if (config.scaleFactorRisky != 0) await contracts.risky.setDecimals(config.decimalsRisky)
-  if (config.scaleFactorStable != 0) await contracts.stable.setDecimals(config.decimalsStable)
+  if (config.scaleFactorquote != 0) await contracts.quote.setDecimals(config.decimalsquote)
+  if (config.scaleFactorbase != 0) await contracts.base.setDecimals(config.decimalsbase)
   /// mint tokens for the user
   let tx: any
   try {
-    tx = await contracts.risky.connect(signer).mint(signer.address, amount.raw)
-    tx = await contracts.stable.connect(signer).mint(signer.address, amount.raw)
+    tx = await contracts.quote.connect(signer).mint(signer.address, amount.raw)
+    tx = await contracts.base.connect(signer).mint(signer.address, amount.raw)
   } catch (err) {
     console.log(`\n   Error thrown on attempting to call mint() on the tokens`)
   }
 
   if (debug) {
     console.log(`\n   Using tokens with:`)
-    console.log(`     - Risky decimals: ${config.decimalsRisky}`)
-    console.log(`     - Stable decimals: ${config.decimalsStable}`)
+    console.log(`     - quote decimals: ${config.decimalsquote}`)
+    console.log(`     - base decimals: ${config.decimalsbase}`)
   }
   return { tx }
 }
@@ -143,8 +143,8 @@ export async function useApproveAll(signer: Wallet, contracts: Contracts) {
   const targets = Object.keys(contracts).map((key) => contracts[key].address)
 
   async function approve(target: string) {
-    await contracts.risky.connect(signer).approve(target, MaxUint256)
-    await contracts.stable.connect(signer).approve(target, MaxUint256)
+    await contracts.quote.connect(signer).approve(target, MaxUint256)
+    await contracts.base.connect(signer).approve(target, MaxUint256)
   }
 
   for (const target of targets) {

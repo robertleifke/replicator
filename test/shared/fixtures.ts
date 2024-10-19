@@ -2,7 +2,7 @@ import { ethers } from 'hardhat'
 import { Fixture } from 'ethereum-waffle'
 import { Libraries } from '../../types'
 import * as ContractTypes from '../../typechain'
-import { TestGetStableGivenRisky, TestCalcInvariant } from '../../typechain'
+import { TestGetbaseGivenquote, TestCalcInvariant } from '../../typechain'
 import MockEngineArtifact from '../../artifacts/contracts/test/engine/MockEngine.sol/MockEngine.json'
 
 interface FactoryFixture {
@@ -16,16 +16,16 @@ async function factoryFixture(): Promise<FactoryFixture> {
 }
 
 interface TokensFixture {
-  risky: ContractTypes.TestToken
-  stable: ContractTypes.TestToken
+  quote: ContractTypes.TestToken
+  base: ContractTypes.TestToken
 }
 
-async function tokensFixture(decimalsRisky: number, decimalsStable: number): Promise<TokensFixture> {
+async function tokensFixture(decimalsquote: number, decimalsbase: number): Promise<TokensFixture> {
   const tokenFactory = await ethers.getContractFactory('TestToken')
-  const risky = (await tokenFactory.deploy('Test Risky 0', 'RISKY0', decimalsRisky)) as ContractTypes.TestToken
-  const stable = (await tokenFactory.deploy('Test Stable 1', 'STABLE1', decimalsStable)) as ContractTypes.TestToken
+  const quote = (await tokenFactory.deploy('Test quote 0', 'quote0', decimalsquote)) as ContractTypes.TestToken
+  const base = (await tokenFactory.deploy('Test base 1', 'base1', decimalsbase)) as ContractTypes.TestToken
 
-  return { risky, stable }
+  return { quote, base }
 }
 
 export interface EngineFixture {
@@ -33,9 +33,9 @@ export interface EngineFixture {
   factoryDeploy: ContractTypes.FactoryDeploy
   router: ContractTypes.TestRouter
   createEngine(
-    decimalsRisky: number,
-    decimalsStable: number
-  ): Promise<{ engine: ContractTypes.MockEngine; risky: ContractTypes.TestToken; stable: ContractTypes.TestToken }>
+    decimalsquote: number,
+    decimalsbase: number
+  ): Promise<{ engine: ContractTypes.MockEngine; quote: ContractTypes.TestToken; base: ContractTypes.TestToken }>
 }
 
 export const engineFixture: Fixture<EngineFixture> = async function (): Promise<EngineFixture> {
@@ -56,14 +56,14 @@ export const engineFixture: Fixture<EngineFixture> = async function (): Promise<
     factory,
     factoryDeploy,
     router,
-    createEngine: async (decimalsRisky: number, decimalsStable: number) => {
-      const { risky, stable } = await tokensFixture(decimalsRisky, decimalsStable)
-      const tx = await factory.deploy(risky.address, stable.address)
+    createEngine: async (decimalsquote: number, decimalsbase: number) => {
+      const { quote, base } = await tokensFixture(decimalsquote, decimalsbase)
+      const tx = await factory.deploy(quote.address, base.address)
       await tx.wait()
-      const addr = await factory.getEngine(risky.address, stable.address)
+      const addr = await factory.getEngine(quote.address, base.address)
       const engine = (await ethers.getContractAt(MockEngineArtifact.abi, addr)) as unknown as ContractTypes.MockEngine
       await router.setEngine(engine.address)
-      return { engine, risky, stable }
+      return { engine, quote, base }
     },
   }
 }
@@ -93,7 +93,7 @@ export const librariesFixture: Fixture<LibraryFixture> = async function (): Prom
 }
 
 export interface TestStepFixture extends LibraryFixture {
-  getStableGivenRisky: TestGetStableGivenRisky
+  getbaseGivenquote: TestGetbaseGivenquote
   calcInvariant: TestCalcInvariant
 }
 
@@ -103,15 +103,15 @@ export const replicationLibrariesFixture: Fixture<TestStepFixture> = async funct
 ): Promise<TestStepFixture> {
   const libraries = await librariesFixture([wallet], provider)
 
-  const stableRiskyFactory = await ethers.getContractFactory('TestGetStableGivenRisky')
-  const getStableGivenRisky = (await stableRiskyFactory.deploy()) as TestGetStableGivenRisky
-  await getStableGivenRisky.deployed()
+  const basequoteFactory = await ethers.getContractFactory('TestGetbaseGivenquote')
+  const getbaseGivenquote = (await basequoteFactory.deploy()) as TestGetbaseGivenquote
+  await getbaseGivenquote.deployed()
 
   const invariantFactory = await ethers.getContractFactory('TestCalcInvariant')
   const calcInvariant = (await invariantFactory.deploy()) as TestCalcInvariant
   await calcInvariant.deployed()
   return {
-    getStableGivenRisky,
+    getbaseGivenquote,
     calcInvariant,
     ...libraries,
   }

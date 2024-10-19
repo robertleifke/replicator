@@ -31,7 +31,7 @@ const START = 1
 const END = Time.YearInSeconds + 1
 
 export const DEFAULT_CONFIG: Calibration = parseCalibration(ATM_STRIKE, MED_SIGMA, END, MED_GAMMA, START, SPOT)
-// strike, sigma, maturity, gamma, lastTimestamp, spot price, risky decimal, stable decimal
+// strike, sigma, maturity, gamma, lastTimestamp, spot price, quote decimal, base decimal
 export const calibrations: any = {
   ['exp']: parseCalibration(ATM_STRIKE, MED_SIGMA, END - 1, MED_GAMMA, END, SPOT),
   ['itm']: parseCalibration(ITM_STRIKE, MED_SIGMA, END, MED_GAMMA, START, SPOT),
@@ -55,7 +55,7 @@ export const TestPools: PoolState[] = [
   // { description: '10% fee', calibration: calibrations.maxgamma },
   // { description: '0.01% sigma', calibration: calibrations.minsigma },
   // {
-  //   description: `6 decimal risky and stable`,
+  //   description: `6 decimal quote and base`,
   //   calibration: calibrations.lowdecimals,
   // },
   /* {
@@ -71,11 +71,11 @@ export const TestPools: PoolState[] = [
     calibration: calibrations.otm,
   },
   {
-    description: `6 decimal risky`,
+    description: `6 decimal quote`,
     calibration: calibrations.lowdecimal0,
   },
   {
-    description: `6 decimal stable`,
+    description: `6 decimal base`,
     calibration: calibrations.lowdecimal1,
   }, */
 ]

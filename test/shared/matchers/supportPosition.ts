@@ -13,7 +13,7 @@ async function getPositionChange(
   return { after, before }
 }
 
-// Chai matchers for the positions of the PrimitiveEngine
+// Chai matchers for the positions of the engine
 
 export default function supportPosition(Assertion: Chai.AssertionStatic) {
   // Liquidity methods

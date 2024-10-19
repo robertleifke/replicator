@@ -16,8 +16,8 @@ testContext('deployer', async function () {
   beforeEach(async function () {
     const fixture = await loadFixture(engineFixture)
     const { factory, factoryDeploy, router } = fixture
-    const { engine, risky, stable } = await fixture.createEngine(18, 18)
-    this.contracts = { factory, factoryDeploy, router, engine, risky, stable }
+    const { engine, quote, base } = await fixture.createEngine(18, 18)
+    this.contracts = { factory, factoryDeploy, router, engine, quote, base }
   })
 
   it('returns the deployer of the contract as the deployer', async function () {

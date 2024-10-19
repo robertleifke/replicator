@@ -2,7 +2,7 @@ import { Wallet, BigNumber } from 'ethers'
 import { Calibration } from '../test/shared/calibration'
 import * as ContractTypes from '../typechain'
 import { Fixture } from '@ethereum-waffle/provider'
-import { SwapTestCase } from '../test/unit/primitiveEngine/effect/swap.test'
+import { SwapTestCase } from '../test/unit/engine/effect/swap.test'
 import { Wei } from 'web3-units'
 
 export type Awaited<T> = T extends PromiseLike<infer U> ? U : T
@@ -17,8 +17,8 @@ export interface Libraries {
 export interface Contracts {
   engine: ContractTypes.MockEngine
   factory: ContractTypes.MockFactory
-  risky: ContractTypes.TestToken
-  stable: ContractTypes.TestToken
+  quote: ContractTypes.TestToken
+  base: ContractTypes.TestToken
   router: ContractTypes.TestRouter
   factoryDeploy: ContractTypes.FactoryDeploy
 }
@@ -51,14 +51,14 @@ type ContractName =
   | 'testReplicationMath'
   | 'testCumulativeNormalDistribution'
 
-export type EngineTypes = ContractTypes.PrimitiveEngine | ContractTypes.MockEngine
+export type EngineTypes = ContractTypes.engine | ContractTypes.MockEngine
 
 declare global {
   export namespace Chai {
     interface Assertion {
       revertWithCustomError(errorName: string, params?: any[], chainId?: number): AsyncAssertion
-      increaseMargin(engine: EngineTypes, account: string, risky: BigNumber, stable: BigNumber): AsyncAssertion
-      decreaseMargin(engine: EngineTypes, account: string, risky: BigNumber, stable: BigNumber): AsyncAssertion
+      increaseMargin(engine: EngineTypes, account: string, quote: BigNumber, base: BigNumber): AsyncAssertion
+      decreaseMargin(engine: EngineTypes, account: string, quote: BigNumber, base: BigNumber): AsyncAssertion
       increasePositionLiquidity(
         engine: EngineTypes,
         account: string,
@@ -71,33 +71,33 @@ declare global {
         poolId: string,
         liquidity: BigNumber
       ): AsyncAssertion
-      increaseReserveRisky(engine: EngineTypes, poolId: string, amount: BigNumber): AsyncAssertion
-      decreaseReserveRisky(engine: EngineTypes, poolId: string, amount: BigNumber): AsyncAssertion
-      increaseReserveStable(engine: EngineTypes, poolId: string, amount: BigNumber): AsyncAssertion
-      decreaseReserveStable(engine: EngineTypes, poolId: string, amount: BigNumber): AsyncAssertion
+      increaseReservequote(engine: EngineTypes, poolId: string, amount: BigNumber): AsyncAssertion
+      decreaseReservequote(engine: EngineTypes, poolId: string, amount: BigNumber): AsyncAssertion
+      increaseReservebase(engine: EngineTypes, poolId: string, amount: BigNumber): AsyncAssertion
+      decreaseReservebase(engine: EngineTypes, poolId: string, amount: BigNumber): AsyncAssertion
       increaseReserveLiquidity(engine: EngineTypes, poolId: string, amount: BigNumber): AsyncAssertion
       decreaseReserveLiquidity(engine: EngineTypes, poolId: string, amount: BigNumber): AsyncAssertion
       updateReserveBlockTimestamp(engine: EngineTypes, poolId: string, blockTimestamp: number): AsyncAssertion
-      updateReserveCumulativeRisky(
+      updateReserveCumulativequote(
         engine: EngineTypes,
         poolId: string,
         amount: BigNumber,
         blockTimestamp: number
       ): AsyncAssertion
-      updateReserveCumulativeStable(
+      updateReserveCumulativebase(
         engine: EngineTypes,
         poolId: string,
         amount: BigNumber,
         blockTimestamp: number
       ): AsyncAssertion
 
-      updateSpotPrice(engine: EngineTypes, cal: Calibration, riskyForStable: boolean): AsyncAssertion
+      updateSpotPrice(engine: EngineTypes, cal: Calibration, quoteForbase: boolean): AsyncAssertion
       decreaseSwapOutBalance(
         engine: EngineTypes,
         tokens: any[],
         receiver: string,
         poolId: string,
-        { riskyForStable, toMargin }: { riskyForStable: boolean; toMargin: boolean },
+        { quoteForbase, toMargin }: { quoteForbase: boolean; toMargin: boolean },
         amountOut?: Wei
       ): AsyncAssertion
       increaseInvariant(engine: EngineTypes, poolId: string): AsyncAssertion

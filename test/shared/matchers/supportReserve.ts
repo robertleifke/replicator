@@ -14,13 +14,13 @@ async function getReserveChange(
   return { after, before }
 }
 
-// Chai matchers for the reserves of the PrimitiveEngine
+// Chai matchers for the reserves of the engine
 
 export default function supportReserve(Assertion: Chai.AssertionStatic) {
-  // Reserve Risky
+  // Reserve quote
 
   Assertion.addMethod(
-    'increaseReserveRisky',
+    'increaseReservequote',
     async function (this: any, engine: EngineTypes, poolId: string, amount: BigNumber) {
       const subject = this._obj
 
@@ -28,13 +28,13 @@ export default function supportReserve(Assertion: Chai.AssertionStatic) {
       // Promise.all returns array of the fn results, so we get the result with [result]
       // destructure the result into the two items in the object, after and before: [{after, before}]
       // since these are the reserves object, need to destrcture the specific value we want:
-      // [{ after: reserveRisky }, before: { reserveRisky: before }]
+      // [{ after: reservequote }, before: { reservequote: before }]
       // finally, redefine those reserve values as before and after, so its easier to do the assertion
       const derivedPromise = Promise.all([getReserveChange(subject, engine, poolId)]).then(
         ([
           {
-            after: { reserveRisky: after },
-            before: { reserveRisky: before },
+            after: { reservequote: after },
+            before: { reservequote: before },
           },
         ]) => {
           const expected = before.add(amount) // INCREASE
@@ -56,14 +56,14 @@ export default function supportReserve(Assertion: Chai.AssertionStatic) {
   )
 
   Assertion.addMethod(
-    'decreaseReserveRisky',
+    'decreaseReservequote',
     async function (this: any, engine: EngineTypes, poolId: string, amount: BigNumber) {
       const subject = this._obj
       const derivedPromise = Promise.all([getReserveChange(subject, engine, poolId)]).then(
         ([
           {
-            after: { reserveRisky: after },
-            before: { reserveRisky: before },
+            after: { reservequote: after },
+            before: { reservequote: before },
           },
         ]) => {
           const expected = before.sub(amount) // DECREASE
@@ -84,17 +84,17 @@ export default function supportReserve(Assertion: Chai.AssertionStatic) {
     }
   )
 
-  // Reserve Stable
+  // Reserve base
 
   Assertion.addMethod(
-    'increaseReserveStable',
+    'increaseReservebase',
     async function (this: any, engine: EngineTypes, poolId: string, amount: BigNumber) {
       const subject = this._obj
       const derivedPromise = Promise.all([getReserveChange(subject, engine, poolId)]).then(
         ([
           {
-            after: { reserveStable: after },
-            before: { reserveStable: before },
+            after: { reservebase: after },
+            before: { reservebase: before },
           },
         ]) => {
           const expected = before.add(amount) // INCREASE
@@ -116,14 +116,14 @@ export default function supportReserve(Assertion: Chai.AssertionStatic) {
   )
 
   Assertion.addMethod(
-    'decreaseReserveStable',
+    'decreaseReservebase',
     async function (this: any, engine: EngineTypes, poolId: string, amount: BigNumber) {
       const subject = this._obj
       const derivedPromise = Promise.all([getReserveChange(subject, engine, poolId)]).then(
         ([
           {
-            after: { reserveStable: after },
-            before: { reserveStable: before },
+            after: { reservebase: after },
+            before: { reservebase: before },
           },
         ]) => {
           const expected = before.sub(amount) // DECREASE
@@ -233,17 +233,17 @@ export default function supportReserve(Assertion: Chai.AssertionStatic) {
     }
   )
 
-  // Cumulative Risky
+  // Cumulative quote
 
   Assertion.addMethod(
-    'updateReserveCumulativeRisky',
+    'updateReserveCumulativequote',
     async function (this: any, engine: EngineTypes, poolId: string, amount: BigNumber, blockTimestamp: number) {
       const subject = this._obj
       const derivedPromise = Promise.all([getReserveChange(subject, engine, poolId)]).then(([{ after, before }]) => {
         const deltaTime = blockTimestamp - before.blockTimestamp
-        const expected = before.reserveRisky.add(after.reserveRisky.mul(deltaTime)) // UPDATE
+        const expected = before.reservequote.add(after.reservequote.mul(deltaTime)) // UPDATE
         this.assert(
-          after.reserveRisky.eq(expected),
+          after.reservequote.eq(expected),
           `Expected ${after} to be ${expected}`,
           `Expected ${after} NOT to be ${expected}`,
           expected,
@@ -258,17 +258,17 @@ export default function supportReserve(Assertion: Chai.AssertionStatic) {
     }
   )
 
-  // Cumulative Stable
+  // Cumulative base
 
   Assertion.addMethod(
-    'updateReserveCumulativeStable',
+    'updateReserveCumulativebase',
     async function (this: any, engine: EngineTypes, poolId: string, amount: BigNumber, blockTimestamp: number) {
       const subject = this._obj
       const derivedPromise = Promise.all([getReserveChange(subject, engine, poolId)]).then(([{ after, before }]) => {
         const deltaTime = blockTimestamp - before.blockTimestamp
-        const expected = before.cumulativeStable.add(after.reserveStable.mul(deltaTime)) // UPDATE
+        const expected = before.cumulativebase.add(after.reservebase.mul(deltaTime)) // UPDATE
         this.assert(
-          after.cumulativeStable.eq(expected),
+          after.cumulativebase.eq(expected),
           `Expected ${after} to be ${expected}`,
           `Expected ${after} NOT to be ${expected}`,
           expected,

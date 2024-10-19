@@ -1,19 +1,26 @@
 # Replicator
 
+The `replicator` enables anyone to sell call options on FX pairs (e.g. USD/EUR).
 
-Replicator is a fork of @primitivefinance's open source `rmm-core` smart contracts with some slight modifications to ensure robustness of the invariant for a foreign currency pairs and additional features to make it more user friendly.
+The smart contract suite is forked from @primitivefinance's open source `rmm-core` repository with modifications to how the the invariant is calculated to ensure robustness for any two arbitrary ERC-20 tokens. 
 
-The `replicator` enables anyone to earn sustainable yield via **theta decay** on any foreign currency pairs and simply by holding an ERC-20 token.
+Each FX pair for which a call option is sold has its own `Engine` contract and follows the standard naming conventions seen in traditional FX markets (`Base/Quote`).
 
-# Testing
+Options underwriters earn on the premium, "theta decay" that is paid by call option buyers. In the context of decentralized finance, these buyers are swappers who swap on the underlying liquidity. To optimize the premium earned by option sellers, a batch auction can be used to match buyers and sellers in a future implementation.
 
-## Build contracts
+## Setup
 
-`forge build`
+`forge install`
 
-## Run the tests
+## Testing
 
-`forge test`
+`forge test -vvv`
+
+## Coverage
+
+`forge coverage --report lcov`
+
+`cmd + shift + p -> Coverage Gutters: Display Coverage`
 
 # Security
 

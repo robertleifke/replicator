@@ -1,12 +1,12 @@
 import {
   callDelta,
   getInvariantApproximation,
-  getMarginalPriceSwapRiskyInApproximation,
-  getMarginalPriceSwapStableInApproximation,
-  getRiskyGivenStable,
-  getRiskyGivenStableApproximation,
+  getMarginalPriceSwapquoteInApproximation,
+  getMarginalPriceSwapbaseInApproximation,
+  getquoteGivenbase,
+  getquoteGivenbaseApproximation,
   getSpotPriceApproximation,
-  getStableGivenRiskyApproximation,
+  getbaseGivenquoteApproximation,
 } from '@primitivefi/rmm-math'
 import { Floating, parseWei, Wei } from 'web3-units'
 
@@ -41,50 +41,50 @@ export interface ExactOutResult extends SwapResult {
 export class Swaps {
   // --- Max Swap Amounts in ---
   static getMaxDeltaIn(
-    riskyForStable: boolean,
-    reserveRiskyWei: Wei,
-    reserveStableWei: Wei,
+    quoteForbase: boolean,
+    reservequoteWei: Wei,
+    reservebaseWei: Wei,
     reserveLiquidityWei: Wei,
     strikeWei: Wei
   ): Wei {
-    if (riskyForStable) {
-      const riskyPerLiquidity = reserveRiskyWei.mul(1e18).div(reserveLiquidityWei)
-      return parseWei(1, reserveRiskyWei.decimals).sub(riskyPerLiquidity).mul(reserveLiquidityWei).div(1e18)
+    if (quoteForbase) {
+      const quotePerLiquidity = reservequoteWei.mul(1e18).div(reserveLiquidityWei)
+      return parseWei(1, reservequoteWei.decimals).sub(quotePerLiquidity).mul(reserveLiquidityWei).div(1e18)
     } else {
-      const stablePerLiquidity = reserveStableWei.mul(1e18).div(reserveLiquidityWei)
-      return strikeWei.sub(stablePerLiquidity).mul(reserveLiquidityWei).div(1e18)
+      const basePerLiquidity = reservebaseWei.mul(1e18).div(reserveLiquidityWei)
+      return strikeWei.sub(basePerLiquidity).mul(reserveLiquidityWei).div(1e18)
     }
   }
 
-  static getMaxDeltaOut(riskyForStable: boolean, reserveRiskyWei: Wei, reserveStableWei: Wei, strikeWei: Wei): Wei {
-    if (riskyForStable) {
-      return reserveStableWei.sub(1)
+  static getMaxDeltaOut(quoteForbase: boolean, reservequoteWei: Wei, reservebaseWei: Wei, strikeWei: Wei): Wei {
+    if (quoteForbase) {
+      return reservebaseWei.sub(1)
     } else {
-      return reserveRiskyWei.sub(1)
+      return reservequoteWei.sub(1)
     }
   }
 
   /**
-   * Gets price of risky token denominated in stable token.
+   * Gets price of quote token denominated in base token.
    *
-   * @param reserveRiskyFloating Amount of risky tokens in reserve as a floating point decimal number.
+   * @param reservequoteFloating Amount of quote tokens in reserve as a floating point decimal number.
    * @param strikeFloating Strike price as a floating point number in decimal format.
    * @param sigmaFloating Implied volatility as a floating point number in decimal format.
    * @param tauYears Time until expiry in years.
    */
-  public static getReportedPriceOfRisky(
-    reserveRiskyFloating: number,
+  public static getReportedPriceOfquote(
+    reservequoteFloating: number,
     strikeFloating: number,
     sigmaFloating: number,
     tauYears: number
   ): number {
-    return getSpotPriceApproximation(reserveRiskyFloating, strikeFloating, sigmaFloating, tauYears)
+    return getSpotPriceApproximation(reservequoteFloating, strikeFloating, sigmaFloating, tauYears)
   }
 
   // --- Computing Reserves ---
 
   /**
-   * Gets estimated risky token reserves given a reference price of the risky asset, for 1 unit of liquidity.
+   * Gets estimated quote token reserves given a reference price of the quote asset, for 1 unit of liquidity.
    *
    * @remarks
    * Equal to the Delta (option greeks) exposure of one liquidity unit.
@@ -92,106 +92,106 @@ export class Swaps {
    * @param strikeFloating Strike price as a floating point number in decimal format.
    * @param sigmaFloating Implied volatility as a floating point number in decimal format.
    * @param tauYears Time until expiry in years.
-   * @param referencePriceOfRisky Price of the risky token denominated in the stable token.
+   * @param referencePriceOfquote Price of the quote token denominated in the base token.
    *
    * @beta
    */
-  public static getRiskyReservesGivenReferencePrice(
+  public static getquoteReservesGivenReferencePrice(
     strikeFloating: number,
     sigmaFloating: number,
     tauYears: number,
-    referencePriceOfRisky: number
+    referencePriceOfquote: number
   ): number {
-    return 1 - callDelta(strikeFloating, sigmaFloating, tauYears, referencePriceOfRisky)
+    return 1 - callDelta(strikeFloating, sigmaFloating, tauYears, referencePriceOfquote)
   }
 
   /**
-   * Gets risky reserves given stable reserves, for 1 unit of liquidity.
+   * Gets quote reserves given base reserves, for 1 unit of liquidity.
    *
    * @param strikeFloating Strike price as a floating point number in decimal format.
    * @param sigmaFloating Implied volatility as a floating point number in decimal format.
    * @param tauYears Time until expiry in years.
-   * @param reserveStableFloating Amount of risky tokens in reserve as a floating point decimal number.
+   * @param reservebaseFloating Amount of quote tokens in reserve as a floating point decimal number.
    * @param invariantFloating Computed invariant of curve as a floating point decimal number.
    *
    * @beta
    */
-  public static getRiskyGivenStable(
+  public static getquoteGivenbase(
     strikeFloating: number,
     sigmaFloating: number,
     tauYears: number,
-    reserveStableFloating: number,
+    reservebaseFloating: number,
     invariantFloating = 0
   ): number | undefined {
-    const stable = getRiskyGivenStableApproximation(
-      reserveStableFloating,
+    const base = getquoteGivenbaseApproximation(
+      reservebaseFloating,
       strikeFloating,
       sigmaFloating,
       tauYears,
       invariantFloating
     )
 
-    if (isNaN(stable)) return undefined
-    return stable
+    if (isNaN(base)) return undefined
+    return base
   }
 
   /**
-   * Gets estimated stable token reserves given risky token reserves, for 1 unit of liquidity.
+   * Gets estimated base token reserves given quote token reserves, for 1 unit of liquidity.
    *
    * @param strikeFloating Strike price as a floating point number in decimal format.
    * @param sigmaFloating Implied volatility as a floating point number in decimal format.
    * @param tauYears Time until expiry in years.
-   * @param reserveRiskyFloating Amount of risky tokens in reserve as a floating point decimal number.
+   * @param reservequoteFloating Amount of quote tokens in reserve as a floating point decimal number.
    * @param invariantFloating Computed invariant of curve as a floating point decimal number.
    *
    * @beta
    */
-  public static getStableGivenRisky(
+  public static getbaseGivenquote(
     strikeFloating: number,
     sigmaFloating: number,
     tauYears: number,
-    reserveRiskyFloating: number,
+    reservequoteFloating: number,
     invariantFloating = 0
   ): number | undefined {
-    const stable = getStableGivenRiskyApproximation(
-      reserveRiskyFloating,
+    const base = getbaseGivenquoteApproximation(
+      reservequoteFloating,
       strikeFloating,
       sigmaFloating,
       tauYears,
       invariantFloating
     )
 
-    if (isNaN(stable)) return undefined
-    return stable
+    if (isNaN(base)) return undefined
+    return base
   }
 
   // --- Computing Change in Marginal Price ---
 
   /**
-   * Gets marginal price after an exact trade in of the risky asset with size `amountIn`.
+   * Gets marginal price after an exact trade in of the quote asset with size `amountIn`.
    *
    * {@link https://arxiv.org/pdf/2012.08040.pdf}
    *
-   * @param reserveRiskyFloating Amount of risky tokens in reserve as a floating point decimal number.
+   * @param reservequoteFloating Amount of quote tokens in reserve as a floating point decimal number.
    * @param strikeFloating Strike price as a floating point number in decimal format.
    * @param sigmaFloating Implied volatility as a floating point number in decimal format.
    * @param tauYears Time until expiry in years.
    * @param gammaFloating Equal to 10_000 - fee, in basis points as a floating point number in decimal format.
-   * @param amountIn Amount of risky token to add to risky reserve.
+   * @param amountIn Amount of quote token to add to quote reserve.
    *
    * @beta
    */
-  public static getMarginalPriceSwapRiskyIn(
-    reserveRiskyFloating: number,
+  public static getMarginalPriceSwapquoteIn(
+    reservequoteFloating: number,
     strikeFloating: number,
     sigmaFloating: number,
     tauYears: number,
     gammaFloating: number,
     amountIn: number
   ) {
-    return getMarginalPriceSwapRiskyInApproximation(
+    return getMarginalPriceSwapquoteInApproximation(
       amountIn,
-      reserveRiskyFloating,
+      reservequoteFloating,
       strikeFloating,
       sigmaFloating,
       tauYears,
@@ -200,32 +200,32 @@ export class Swaps {
   }
 
   /**
-   * Gets marginal price after an exact trade in of the stable asset with size `amountIn`.
+   * Gets marginal price after an exact trade in of the base asset with size `amountIn`.
    *
    * {@link https://arxiv.org/pdf/2012.08040.pdf}
    *
-   * @param reserveStableFloating Amount of stable tokens in reserve as a floating point decimal number.
+   * @param reservebaseFloating Amount of base tokens in reserve as a floating point decimal number.
    * @param strikeFloating Strike price as a floating point number in decimal format.
    * @param sigmaFloating Implied volatility as a floating point number in decimal format.
    * @param tauYears Time until expiry in years.
    * @param gammaFloating Equal to 10_000 - fee, in basis points as a floating point number in decimal format.
-   * @param amountIn Amount of stable token to add to stable reserve.
+   * @param amountIn Amount of base token to add to base reserve.
    *
    * @beta
    */
-  public static getMarginalPriceSwapStableIn(
+  public static getMarginalPriceSwapbaseIn(
     invariantFloating: number,
-    reserveStableFloating: number,
+    reservebaseFloating: number,
     strikeFloating: number,
     sigmaFloating: number,
     tauYears: number,
     gammaFloating: number,
     amountIn: number
   ) {
-    return getMarginalPriceSwapStableInApproximation(
+    return getMarginalPriceSwapbaseInApproximation(
       amountIn,
       invariantFloating,
-      reserveStableFloating,
+      reservebaseFloating,
       strikeFloating,
       sigmaFloating,
       tauYears,
@@ -234,15 +234,15 @@ export class Swaps {
   }
 
   /**
-   * Gets output amount of stable tokens given an exact amount of risky tokens in.
+   * Gets output amount of base tokens given an exact amount of quote tokens in.
    *
    * {@link https://github.com/primitivefinance/rmms-py}
    *
-   * @param amountIn Amount of risky token to add to risky reserve.
-   * @param decimalsRisky Decimal places of the risky token.
-   * @param decimalsStable Decimal places of the stable token.
-   * @param reserveRiskyFloating Amount of risky tokens in reserve as a floating point decimal number.
-   * @param reserveStableFloating Amount of stable tokens in reserve as a floating point decimal number.
+   * @param amountIn Amount of quote token to add to quote reserve.
+   * @param decimalsquote Decimal places of the quote token.
+   * @param decimalsbase Decimal places of the base token.
+   * @param reservequoteFloating Amount of quote tokens in reserve as a floating point decimal number.
+   * @param reservebaseFloating Amount of base tokens in reserve as a floating point decimal number.
    * @param reserveLiquidityFloating Total supply of liquidity as a floating point decimal number.
    * @param strikeFloating Strike price as a floating point number in decimal format.
    * @param sigmaFloating Implied volatility as a floating point number in decimal format.
@@ -251,12 +251,12 @@ export class Swaps {
    *
    * @beta
    */
-  public static exactRiskyInput(
+  public static exactquoteInput(
     amountIn: number,
-    decimalsRisky: number,
-    decimalsStable: number,
-    reserveRiskyFloating: number,
-    reserveStableFloating: number,
+    decimalsquote: number,
+    decimalsbase: number,
+    reservequoteFloating: number,
+    reservebaseFloating: number,
     reserveLiquidityFloating: number,
     strikeFloating: number,
     sigmaFloating: number,
@@ -270,8 +270,8 @@ export class Swaps {
     const sigma = sigmaFloating
     const tau = tauYears
 
-    const x = Floating.from(reserveRiskyFloating, decimalsRisky)
-    const y = Floating.from(reserveStableFloating, decimalsStable)
+    const x = Floating.from(reservequoteFloating, decimalsquote)
+    const y = Floating.from(reservebaseFloating, decimalsbase)
     const l = Floating.from(reserveLiquidityFloating, 18)
 
     // Invariant `k` must always be calculated given the curve with `tau`, else the swap happens on a mismatched curve
@@ -286,11 +286,11 @@ export class Swaps {
 
     const x1 = x.add(amountIn * gamma).div(l)
 
-    const yAdjusted = Swaps.getStableGivenRisky(x1.normalized, K, sigma, tau, k)
+    const yAdjusted = Swaps.getbaseGivenquote(x1.normalized, K, sigma, tau, k)
     if (typeof yAdjusted === 'undefined')
-      throw new Error(`Next stable reserves are undefined: ${[yAdjusted, x1.normalized, K, sigma, tau, k]}`)
+      throw new Error(`Next base reserves are undefined: ${[yAdjusted, x1.normalized, K, sigma, tau, k]}`)
 
-    const y1 = Floating.from(yAdjusted, decimalsStable).mul(l) // liquidity normalized
+    const y1 = Floating.from(yAdjusted, decimalsbase).mul(l) // liquidity normalized
 
     const output = y.sub(y1.normalized)
     if (output.normalized < 0) throw new Error(`Reserves cannot be negative: ${output.normalized}`)
@@ -311,15 +311,15 @@ export class Swaps {
   }
 
   /**
-   * Gets output amount of risky tokens given an exact amount of stable tokens in.
+   * Gets output amount of quote tokens given an exact amount of base tokens in.
    *
    * {@link https://github.com/primitivefinance/rmms-py}
    *
-   * @param amountIn Amount of stable tokens to add to stable reserve.
-   * @param decimalsRisky Decimal places of the risky token.
-   * @param decimalsStable Decimal places of the stable token.
-   * @param reserveRiskyFloating Amount of risky tokens in reserve as a floating point decimal number.
-   * @param reserveStableFloating Amount of stable tokens in reserve as a floating point decimal number.
+   * @param amountIn Amount of base tokens to add to base reserve.
+   * @param decimalsquote Decimal places of the quote token.
+   * @param decimalsbase Decimal places of the base token.
+   * @param reservequoteFloating Amount of quote tokens in reserve as a floating point decimal number.
+   * @param reservebaseFloating Amount of base tokens in reserve as a floating point decimal number.
    * @param reserveLiquidityFloating Total supply of liquidity as a floating point decimal number.
    * @param strikeFloating Strike price as a floating point number in decimal format.
    * @param sigmaFloating Implied volatility as a floating point number in decimal format.
@@ -328,12 +328,12 @@ export class Swaps {
    *
    * @beta
    */
-  public static exactStableInput(
+  public static exactbaseInput(
     amountIn: number,
-    decimalsRisky: number,
-    decimalsStable: number,
-    reserveRiskyFloating: number,
-    reserveStableFloating: number,
+    decimalsquote: number,
+    decimalsbase: number,
+    reservequoteFloating: number,
+    reservebaseFloating: number,
     reserveLiquidityFloating: number,
     strikeFloating: number,
     sigmaFloating: number,
@@ -347,8 +347,8 @@ export class Swaps {
     const sigma = sigmaFloating
     const tau = tauYears
 
-    const x = Floating.from(reserveRiskyFloating, decimalsRisky)
-    const y = Floating.from(reserveStableFloating, decimalsStable)
+    const x = Floating.from(reservequoteFloating, decimalsquote)
+    const y = Floating.from(reservebaseFloating, decimalsbase)
     const l = Floating.from(reserveLiquidityFloating, 18)
 
     // Invariant `k` must always be calculated given the curve with `tau`, else the swap happens on a mismatched curve
@@ -364,10 +364,10 @@ export class Swaps {
     const y1 = y.add(amountIn * gamma).div(l)
 
     // note: for some reason, the regular non approximated fn outputs less
-    const xAdjusted = getRiskyGivenStable(y1.normalized, K, sigma, tau, k)
+    const xAdjusted = getquoteGivenbase(y1.normalized, K, sigma, tau, k)
     if (xAdjusted < 0) throw new Error(`Reserves cannot be negative: ${xAdjusted}`)
 
-    const x1 = Floating.from(xAdjusted, decimalsRisky).mul(l)
+    const x1 = Floating.from(xAdjusted, decimalsquote).mul(l)
 
     const output = x.sub(x1)
     if (output.normalized < 0) throw new Error(`Amount out cannot be negative: ${output.normalized}`)
@@ -380,7 +380,7 @@ export class Swaps {
 
     let priceIn: string
     if (amountIn === 0) priceIn = Floating.INFINITY.toString()
-    else priceIn = Floating.from(amountIn, decimalsStable).div(output).normalized.toString()
+    else priceIn = Floating.from(amountIn, decimalsbase).div(output).normalized.toString()
 
     return {
       output: output.normalized,
@@ -390,15 +390,15 @@ export class Swaps {
   }
 
   /**
-   * Gets input amount of stable tokens given an exact amount of risky tokens out.
+   * Gets input amount of base tokens given an exact amount of quote tokens out.
    *
    * {@link https://github.com/primitivefinance/rmms-py}
    *
-   * @param amountOut Amount of risky tokens to remove from risky reserve.
-   * @param decimalsRisky Decimal places of the risky token.
-   * @param decimalsStable Decimal places of the stable token.
-   * @param reserveRiskyFloating Amount of risky tokens in reserve as a floating point decimal number.
-   * @param reserveStableFloating Amount of stable tokens in reserve as a floating point decimal number.
+   * @param amountOut Amount of quote tokens to remove from quote reserve.
+   * @param decimalsquote Decimal places of the quote token.
+   * @param decimalsbase Decimal places of the base token.
+   * @param reservequoteFloating Amount of quote tokens in reserve as a floating point decimal number.
+   * @param reservebaseFloating Amount of base tokens in reserve as a floating point decimal number.
    * @param reserveLiquidityFloating Total supply of liquidity as a floating point decimal number.
    * @param strikeFloating Strike price as a floating point number in decimal format.
    * @param sigmaFloating Implied volatility as a floating point number in decimal format.
@@ -407,12 +407,12 @@ export class Swaps {
    *
    * @beta
    */
-  public static exactRiskyOutput(
+  public static exactquoteOutput(
     amountOut: number,
-    decimalsRisky: number,
-    decimalsStable: number,
-    reserveRiskyFloating: number,
-    reserveStableFloating: number,
+    decimalsquote: number,
+    decimalsbase: number,
+    reservequoteFloating: number,
+    reservebaseFloating: number,
     reserveLiquidityFloating: number,
     strikeFloating: number,
     sigmaFloating: number,
@@ -426,8 +426,8 @@ export class Swaps {
     const sigma = sigmaFloating
     const tau = tauYears
 
-    const x = Floating.from(reserveRiskyFloating, decimalsRisky)
-    const y = Floating.from(reserveStableFloating, decimalsStable)
+    const x = Floating.from(reservequoteFloating, decimalsquote)
+    const y = Floating.from(reservebaseFloating, decimalsbase)
     const l = Floating.from(reserveLiquidityFloating, 18)
 
     // Invariant `k` must always be calculated given the curve with `tau`, else the swap happens on a mismatched curve
@@ -441,10 +441,10 @@ export class Swaps {
     )
     const x1 = x.sub(amountOut).div(l)
 
-    const yAdjusted = Swaps.getStableGivenRisky(K, sigma, tau, x1.normalized) // fix: doesn't use approx (which works?)
-    if (typeof yAdjusted === 'undefined') throw new Error(`Adjusted stable reserve cannot be undefined: ${yAdjusted}`)
+    const yAdjusted = Swaps.getbaseGivenquote(K, sigma, tau, x1.normalized) // fix: doesn't use approx (which works?)
+    if (typeof yAdjusted === 'undefined') throw new Error(`Adjusted base reserve cannot be undefined: ${yAdjusted}`)
 
-    const y1 = Floating.from(yAdjusted, decimalsStable).mul(l)
+    const y1 = Floating.from(yAdjusted, decimalsbase).mul(l)
 
     const input = y1.sub(y)
     const inputWithFee = input.div(gamma)
@@ -467,15 +467,15 @@ export class Swaps {
   }
 
   /**
-   * Gets input amount of risky tokens given an exact amount of stable tokens out.
+   * Gets input amount of quote tokens given an exact amount of base tokens out.
    *
    * {@link https://github.com/primitivefinance/rmms-py}
    *
-   * @param amountOut Amount of stable tokens to remove from stable reserve.
-   * @param decimalsRisky Decimal places of the risky token.
-   * @param decimalsStable Decimal places of the stable token.
-   * @param reserveRiskyFloating Amount of risky tokens in reserve as a floating point decimal number.
-   * @param reserveStableFloating Amount of stable tokens in reserve as a floating point decimal number.
+   * @param amountOut Amount of base tokens to remove from base reserve.
+   * @param decimalsquote Decimal places of the quote token.
+   * @param decimalsbase Decimal places of the base token.
+   * @param reservequoteFloating Amount of quote tokens in reserve as a floating point decimal number.
+   * @param reservebaseFloating Amount of base tokens in reserve as a floating point decimal number.
    * @param reserveLiquidityFloating Total supply of liquidity as a floating point decimal number.
    * @param strikeFloating Strike price as a floating point number in decimal format.
    * @param sigmaFloating Implied volatility as a floating point number in decimal format.
@@ -484,12 +484,12 @@ export class Swaps {
    *
    * @beta
    */
-  public static exactStableOutput(
+  public static exactbaseOutput(
     amountOut: number,
-    decimalsRisky: number,
-    decimalsStable: number,
-    reserveRiskyFloating: number,
-    reserveStableFloating: number,
+    decimalsquote: number,
+    decimalsbase: number,
+    reservequoteFloating: number,
+    reservebaseFloating: number,
     reserveLiquidityFloating: number,
     strikeFloating: number,
     sigmaFloating: number,
@@ -503,8 +503,8 @@ export class Swaps {
     const sigma = sigmaFloating
     const tau = tauYears
 
-    const x = Floating.from(reserveRiskyFloating, decimalsRisky)
-    const y = Floating.from(reserveStableFloating, decimalsStable)
+    const x = Floating.from(reservequoteFloating, decimalsquote)
+    const y = Floating.from(reservebaseFloating, decimalsbase)
     const l = Floating.from(reserveLiquidityFloating, 18)
 
     // Invariant `k` must always be calculated given the curve with `tau`, else the swap happens on a mismatched curve
@@ -519,10 +519,10 @@ export class Swaps {
 
     const y1 = y.sub(amountOut).div(l)
 
-    const xAdjusted = getRiskyGivenStable(y1.normalized, K, sigma, tau, k)
-    if (xAdjusted < 0) throw new Error(`Adjusted risky reserves cannot be negative: ${xAdjusted}`)
+    const xAdjusted = getquoteGivenbase(y1.normalized, K, sigma, tau, k)
+    if (xAdjusted < 0) throw new Error(`Adjusted quote reserves cannot be negative: ${xAdjusted}`)
 
-    const x1 = Floating.from(xAdjusted, decimalsRisky).mul(l)
+    const x1 = Floating.from(xAdjusted, decimalsquote).mul(l)
 
     const input = x1.sub(x)
     const inputWithFee = input.div(gamma)
@@ -533,7 +533,7 @@ export class Swaps {
     const invariant = getInvariantApproximation(res0.normalized, res1.normalized, K, sigma, tau, 0)
     if (invariant < k) throw new Error(`Invariant decreased by: ${k - invariant}`)
 
-    const priceIn = Floating.from(amountOut, decimalsStable).div(inputWithFee).normalized.toString()
+    const priceIn = Floating.from(amountOut, decimalsbase).div(inputWithFee).normalized.toString()
 
     return {
       input: inputWithFee.normalized,

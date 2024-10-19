@@ -34,8 +34,8 @@ testContext('testMargin', function () {
       let delta = parseWei('1').raw
       await margin.shouldDeposit(delta, delta)
       let after = await margin.margin()
-      expect(after.balanceRisky).to.be.deep.eq(before.balanceRisky.add(delta))
-      expect(after.balanceStable).to.be.deep.eq(before.balanceStable.add(delta))
+      expect(after.balancequote).to.be.deep.eq(before.balancequote.add(delta))
+      expect(after.balancebase).to.be.deep.eq(before.balancebase.add(delta))
     })
 
     it('shouldWithdraw', async function () {
@@ -43,8 +43,8 @@ testContext('testMargin', function () {
       await margin.shouldDeposit(delta, delta)
       await margin.shouldWithdraw(delta, delta)
       let after = await margin.margin()
-      expect(after.balanceRisky).to.be.deep.eq(before.balanceRisky)
-      expect(after.balanceStable).to.be.deep.eq(before.balanceStable)
+      expect(after.balancequote).to.be.deep.eq(before.balancequote)
+      expect(after.balancebase).to.be.deep.eq(before.balancebase)
     })
   })
 })

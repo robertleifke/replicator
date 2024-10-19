@@ -11,7 +11,7 @@ export const maxError = {
  * Computes deterministic poolIds from hashing engine address and calibration parameters.
  *
  * @param engine Address of Engine contract.
- * @param strike Strike price in wei, with decimal places equal to the Engine's `stable` token decimals.
+ * @param strike Strike price in wei, with decimal places equal to the Engine's `base` token decimals.
  * @param sigma  Implied volatility in basis points.
  * @param maturity Timestamp of expiration in seconds, matching the format of `block.timestamp`.
  * @param gamma  Equal to 10_000 - fee, in basis points. Used to apply fee on swaps.
@@ -33,18 +33,18 @@ export function computePoolId(engine: string, strike: string, sigma: string, mat
  * Verify `bytecode` is up-to-date.
  *
  * @param factory Deployer of the Engine contract.
- * @param risky Risky token address.
- * @param stable Stable token address.
- * @param bytecode Bytecode of the PrimitiveEngine.sol smart contract.
+ * @param quote quote token address.
+ * @param base base token address.
+ * @param bytecode Bytecode of the engine.sol smart contract.
  *
  * @returns engine address.
  *
  * @beta
  */
-export function computeEngineAddress(factory: string, risky: string, stable: string, bytecode: string): string {
+export function computeEngineAddress(factory: string, quote: string, base: string, bytecode: string): string {
   const salt = utils.solidityKeccak256(
     ['bytes'],
-    [utils.defaultAbiCoder.encode(['address', 'address'], [risky, stable])]
+    [utils.defaultAbiCoder.encode(['address', 'address'], [quote, base])]
   )
   return utils.getCreate2Address(factory, salt, utils.keccak256(bytecode))
 }

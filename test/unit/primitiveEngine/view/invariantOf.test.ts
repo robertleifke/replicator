@@ -13,7 +13,7 @@ import { createFixtureLoader } from 'ethereum-waffle'
 
 TestPools.forEach(function (pool: PoolState) {
   testContext(`invariant of ${pool.description} pool`, function () {
-    const { decimalsRisky, decimalsStable } = pool.calibration
+    const { decimalsquote, decimalsbase } = pool.calibration
     let poolId: string
 
     let loadFixture: ReturnType<typeof createFixtureLoader>
@@ -26,8 +26,8 @@ TestPools.forEach(function (pool: PoolState) {
     beforeEach(async function () {
       const fixture = await loadFixture(engineFixture)
       const { factory, factoryDeploy, router } = fixture
-      const { engine, risky, stable } = await fixture.createEngine(decimalsRisky, decimalsStable)
-      this.contracts = { factory, factoryDeploy, router, engine, risky, stable }
+      const { engine, quote, base } = await fixture.createEngine(decimalsquote, decimalsbase)
+      this.contracts = { factory, factoryDeploy, router, engine, quote, base }
 
       await useTokens(this.signers[0], this.contracts, pool.calibration)
       await useApproveAll(this.signers[0], this.contracts)
@@ -36,16 +36,16 @@ TestPools.forEach(function (pool: PoolState) {
     })
 
     it('does not revert if expired', async function () {
-      const cal = parseCalibration(10, 1, 1, 1 - 0.0015, 0, 10, decimalsRisky, decimalsStable)
+      const cal = parseCalibration(10, 1, 1, 1 - 0.0015, 0, 10, decimalsquote, decimalsbase)
       const account = this.signers[0].address
-      await this.contracts.risky.mint(account, parseWei('1000').raw)
-      await this.contracts.stable.mint(account, parseWei('1000').raw)
+      await this.contracts.quote.mint(account, parseWei('1000').raw)
+      await this.contracts.base.mint(account, parseWei('1000').raw)
       await this.contracts.router.create(
         cal.strike.raw,
         cal.sigma.raw,
         cal.maturity.raw,
         cal.gamma.raw,
-        parseWei(1, cal.decimalsRisky).sub(parseWei(cal.delta, cal.decimalsRisky)).raw,
+        parseWei(1, cal.decimalsquote).sub(parseWei(cal.delta, cal.decimalsquote)).raw,
         parseWei('1').raw,
         constants.HashZero
       )

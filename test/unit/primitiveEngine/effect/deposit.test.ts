@@ -13,7 +13,7 @@ const { HashZero } = constants
 
 TestPools.forEach(function (pool: PoolState) {
   testContext(`deposit to engine for ${pool.description}`, function () {
-    const { decimalsRisky, decimalsStable } = pool.calibration
+    const { decimalsquote, decimalsbase } = pool.calibration
 
     let loadFixture: ReturnType<typeof createFixtureLoader>
     let signer: Wallet, other: Wallet
@@ -25,8 +25,8 @@ TestPools.forEach(function (pool: PoolState) {
     beforeEach(async function () {
       const fixture = await loadFixture(engineFixture)
       const { factory, factoryDeploy, router } = fixture
-      const { engine, risky, stable } = await fixture.createEngine(decimalsRisky, decimalsStable)
-      this.contracts = { factory, factoryDeploy, router, engine, risky, stable }
+      const { engine, quote, base } = await fixture.createEngine(decimalsquote, decimalsbase)
+      this.contracts = { factory, factoryDeploy, router, engine, quote, base }
 
       await useTokens(this.signers[0], this.contracts, pool.calibration)
       await useApproveAll(this.signers[0], this.contracts)
@@ -63,17 +63,17 @@ TestPools.forEach(function (pool: PoolState) {
       })
 
       it('increases the balances of the engine contract', async function () {
-        const riskyBalance = await this.contracts.risky.balanceOf(this.contracts.engine.address)
-        const stableBalance = await this.contracts.stable.balanceOf(this.contracts.engine.address)
+        const quoteBalance = await this.contracts.quote.balanceOf(this.contracts.engine.address)
+        const baseBalance = await this.contracts.base.balanceOf(this.contracts.engine.address)
 
         await this.contracts.router.deposit(this.signers[0].address, parseWei('500').raw, parseWei('250').raw, HashZero)
 
-        expect(await this.contracts.risky.balanceOf(this.contracts.engine.address)).to.equal(
-          riskyBalance.add(parseWei('500').raw)
+        expect(await this.contracts.quote.balanceOf(this.contracts.engine.address)).to.equal(
+          quoteBalance.add(parseWei('500').raw)
         )
 
-        expect(await this.contracts.stable.balanceOf(this.contracts.engine.address)).to.equal(
-          stableBalance.add(parseWei('250').raw)
+        expect(await this.contracts.base.balanceOf(this.contracts.engine.address)).to.equal(
+          baseBalance.add(parseWei('250').raw)
         )
       })
 
@@ -93,8 +93,8 @@ TestPools.forEach(function (pool: PoolState) {
 
         const margin = await this.contracts.engine.margins(this.signers[0].address)
 
-        expect(margin.balanceRisky).to.equal(parseWei('2000').raw)
-        expect(margin.balanceStable).to.equal(parseWei('2000').raw)
+        expect(margin.balancequote).to.equal(parseWei('2000').raw)
+        expect(margin.balancebase).to.equal(parseWei('2000').raw)
       })
 
       it('emits the Deposit event', async function () {
@@ -118,9 +118,9 @@ TestPools.forEach(function (pool: PoolState) {
         ).to.be.reverted
       })
 
-      it('reverts when the callback did not transfer the stable', async function () {
+      it('reverts when the callback did not transfer the base', async function () {
         await expect(
-          this.contracts.router.depositOnlyRisky(
+          this.contracts.router.depositOnlyquote(
             this.signers[0].address,
             parseWei('1000').raw,
             parseWei('1000').raw,
@@ -129,9 +129,9 @@ TestPools.forEach(function (pool: PoolState) {
         ).to.be.reverted
       })
 
-      it('reverts when the callback did not transfer the risky', async function () {
+      it('reverts when the callback did not transfer the quote', async function () {
         await expect(
-          this.contracts.router.depositOnlyStable(
+          this.contracts.router.depositOnlybase(
             this.signers[0].address,
             parseWei('1000').raw,
             parseWei('1000').raw,
@@ -140,7 +140,7 @@ TestPools.forEach(function (pool: PoolState) {
         ).to.be.reverted
       })
 
-      it('reverts when the callback did not transfer the risky or the stable', async function () {
+      it('reverts when the callback did not transfer the quote or the base', async function () {
         await expect(
           this.contracts.router.depositFail(
             this.signers[0].address,

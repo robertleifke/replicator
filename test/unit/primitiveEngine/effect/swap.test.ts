@@ -13,7 +13,7 @@ import { useTokens, useLiquidity, useMargin, useApproveAll, usePool } from '../.
 import { createFixtureLoader } from 'ethereum-waffle'
 
 /**
- * @dev The forward math function for calculating the stable reserves given a risky
+ * @dev The forward math function for calculating the base reserves given a quote
  * reserve will yield a result thats accurate and precise. The inverse trading direction function
  * is not precise, because we use approximations in the forward function.
  * This has the effect of some error when calculating in the inverse swap direction on-chain.
@@ -44,7 +44,7 @@ async function setup(deployer: Wallet, contracts: Contracts, calibration: Calibr
 }
 
 export interface SwapTestCase {
-  riskyForStable: boolean
+  quoteForbase: boolean
   fromMargin: boolean
   toMargin: boolean
   exactOut: boolean
@@ -52,7 +52,7 @@ export interface SwapTestCase {
 }
 
 function swapTestCaseDescription({
-  riskyForStable,
+  quoteForbase,
   fromMargin,
   toMargin,
   exactOut,
@@ -62,9 +62,9 @@ function swapTestCaseDescription({
   const receiver = toMargin ? (fromMargin ? ` to ${signer} account` : ` to router account`) : ``
   const payee = fromMargin ? `from ${signer} Margin account` : 'from Callee Balance'
   const tradeType = exactOut
-    ? `${riskyForStable ? 'risky in for exact stable out' : 'stable in for exact risky out'}`
-    : `${riskyForStable ? 'exact risky in for stable out' : 'exact stable in for risky out'}`
-  if (riskyForStable) {
+    ? `${quoteForbase ? 'quote in for exact base out' : 'base in for exact quote out'}`
+    : `${quoteForbase ? 'exact quote in for base out' : 'exact base in for quote out'}`
+  if (quoteForbase) {
     return `swapping ` + tradeType + ` ${payee}` + receiver
   } else {
     return `swapping ` + tradeType + ` ${payee}` + receiver
@@ -72,28 +72,28 @@ function swapTestCaseDescription({
 }
 
 function spotPriceTestCaseDescription({
-  riskyForStable,
+  quoteForbase,
   deltaIn,
   deltaOut,
   exactOut,
 }: {
-  riskyForStable: boolean
+  quoteForbase: boolean
   deltaIn: Wei
   deltaOut: Wei
   exactOut: boolean
 }): string {
   const tradeType = exactOut
     ? `${
-        riskyForStable
-          ? `${deltaIn.display} risky in for exact ${deltaOut.display} stable out`
-          : `${deltaIn.display} stable in for exact ${deltaOut.display} risky out`
+        quoteForbase
+          ? `${deltaIn.display} quote in for exact ${deltaOut.display} base out`
+          : `${deltaIn.display} base in for exact ${deltaOut.display} quote out`
       }`
     : `${
-        riskyForStable
-          ? `exact ${deltaIn.display} risky in for ${deltaOut.display} stable out`
-          : `exact ${deltaIn.display} stable in for ${deltaOut.display} risky out`
+        quoteForbase
+          ? `exact ${deltaIn.display} quote in for ${deltaOut.display} base out`
+          : `exact ${deltaIn.display} base in for ${deltaOut.display} quote out`
       }`
-  if (riskyForStable) {
+  if (quoteForbase) {
     return `spot price +/- in the correct direction for swapping ` + tradeType
   } else {
     return `spot price +/- in the correct direction for swapping ` + tradeType
@@ -103,7 +103,7 @@ function spotPriceTestCaseDescription({
 // For each pool parameter set
 TestPools.forEach(function (pool: PoolState) {
   testContext(`Swap in ${pool.description} pool. This will take awhile...`, function () {
-    const { maturity, lastTimestamp, decimalsRisky, decimalsStable } = pool.calibration
+    const { maturity, lastTimestamp, decimalsquote, decimalsbase } = pool.calibration
     let poolId: string
     let virtualPool: VirtualPool
 
@@ -117,8 +117,8 @@ TestPools.forEach(function (pool: PoolState) {
     beforeEach(async function () {
       const fixture = await loadFixture(engineFixture)
       const { factory, factoryDeploy, router } = fixture
-      const { engine, risky, stable } = await fixture.createEngine(decimalsRisky, decimalsStable)
-      this.contracts = { factory, factoryDeploy, router, engine, risky, stable }
+      const { engine, quote, base } = await fixture.createEngine(decimalsquote, decimalsbase)
+      this.contracts = { factory, factoryDeploy, router, engine, quote, base }
 
       deployer = this.signers[0]
       poolId = await setup(deployer, this.contracts, pool.calibration)
@@ -135,9 +135,9 @@ TestPools.forEach(function (pool: PoolState) {
       BOOL_CASES.forEach((toMargin) => {
         BOOL_CASES.forEach((fromMargin) => {
           BOOL_CASES.forEach((exactOut) => {
-            BOOL_CASES.forEach((riskyForStable) =>
+            BOOL_CASES.forEach((quoteForbase) =>
               describe(
-                swapTestCaseDescription({ riskyForStable, fromMargin, toMargin, exactOut, signerIndex: 0 }),
+                swapTestCaseDescription({ quoteForbase, fromMargin, toMargin, exactOut, signerIndex: 0 }),
                 async function () {
                   let deltaIn: Wei, deltaOut: Wei, tx: any, target: any, swapper: any, receiver: string
 
@@ -149,9 +149,9 @@ TestPools.forEach(function (pool: PoolState) {
                     const invariant = await this.contracts.engine.invariantOf(poolId)
                     virtualPool = new VirtualPool(
                       pool.calibration,
-                      new Wei(res.reserveRisky, decimalsRisky),
+                      new Wei(res.reservequote, decimalsquote),
                       new Wei(res.liquidity),
-                      new Wei(res.reserveStable, decimalsStable),
+                      new Wei(res.reservebase, decimalsbase),
                       new FixedPointX64(invariant)
                     )
 
@@ -161,37 +161,37 @@ TestPools.forEach(function (pool: PoolState) {
                     receiver = fromMargin ? swapper.address : this.contracts.router.address // send back to swapper's margin if its used to pay for swap
 
                     // get the range of successful swap in/out amounts
-                    const maxIn = virtualPool.getMaxDeltaIn(riskyForStable)
-                    const maxOut = virtualPool.getMaxDeltaOut(riskyForStable)
+                    const maxIn = virtualPool.getMaxDeltaIn(quoteForbase)
+                    const maxOut = virtualPool.getMaxDeltaOut(quoteForbase)
 
                     // get the swap arguments for token deltas
                     let method: any
                     if (exactOut) {
                       // exact out method for computing deltaIn
-                      method = riskyForStable
-                        ? this.contracts.router.getRiskyInGivenStableOut
-                        : this.contracts.router.getStableInGivenRiskyOut
+                      method = quoteForbase
+                        ? this.contracts.router.getquoteInGivenbaseOut
+                        : this.contracts.router.getbaseInGivenquoteOut
                       deltaOut = maxOut.mul(1).div(2) // use half the max trade size in, arbitrary amount
                       deltaIn = new Wei(
                         await method(poolId, deltaOut.raw),
-                        riskyForStable ? decimalsRisky : decimalsStable
+                        quoteForbase ? decimalsquote : decimalsbase
                       )
                       // apply the error if the trade is going in the inverse direction
-                      if (riskyForStable)
+                      if (quoteForbase)
                         deltaIn = deltaIn.mul(parseWei(1 - INVERSE_DIRECTION_ERROR)).div(VirtualPool.PRECISION)
                     } else {
                       // exact in method for computing deltaOut
-                      method = riskyForStable
-                        ? this.contracts.router.getStableOutGivenRiskyIn
-                        : this.contracts.router.getRiskyOutGivenStableIn
+                      method = quoteForbase
+                        ? this.contracts.router.getbaseOutGivenquoteIn
+                        : this.contracts.router.getquoteOutGivenbaseIn
                       deltaIn = maxIn.mul(1).div(2) // use half the max trade size in, arbitrary amount
                       deltaOut = new Wei(
                         await method(poolId, deltaIn.raw),
-                        riskyForStable ? decimalsStable : decimalsRisky
+                        quoteForbase ? decimalsbase : decimalsquote
                       )
                       // apply the error if the trade is going in the inverse direction
                       const ON_CHAIN_SWAP_ERROR = 0.02 // to-do: fix this by using a more accurate method of computing delta in/out amounts
-                      if (!riskyForStable)
+                      if (!quoteForbase)
                         deltaOut = deltaOut.mul(parseWei(1 - ON_CHAIN_SWAP_ERROR)).div(VirtualPool.PRECISION)
                     }
 
@@ -205,7 +205,7 @@ TestPools.forEach(function (pool: PoolState) {
                       .swap(
                         target.address,
                         poolId,
-                        riskyForStable,
+                        quoteForbase,
                         deltaIn.raw,
                         deltaOut.raw,
                         fromMargin,
@@ -221,16 +221,16 @@ TestPools.forEach(function (pool: PoolState) {
                       .swap(
                         target.address,
                         poolId,
-                        riskyForStable,
+                        quoteForbase,
                         deltaIn.raw,
                         deltaOut.raw,
                         fromMargin,
                         toMargin,
                         HashZero
                       )
-                    const tokens = [this.contracts.risky, this.contracts.stable]
+                    const tokens = [this.contracts.quote, this.contracts.base]
                     await expect(() => tx).to.decreaseSwapOutBalance(this.contracts.engine, tokens, receiver, poolId, {
-                      riskyForStable,
+                      quoteForbase,
                       toMargin,
                     })
                   })
@@ -241,7 +241,7 @@ TestPools.forEach(function (pool: PoolState) {
                       .swap(
                         target.address,
                         poolId,
-                        riskyForStable,
+                        quoteForbase,
                         deltaIn.raw,
                         deltaOut.raw,
                         fromMargin,
@@ -257,14 +257,14 @@ TestPools.forEach(function (pool: PoolState) {
                       .swap(
                         target.address,
                         poolId,
-                        riskyForStable,
+                        quoteForbase,
                         deltaIn.raw,
                         deltaOut.raw,
                         fromMargin,
                         toMargin,
                         HashZero
                       )
-                    await expect(() => tx).to.updateSpotPrice(this.contracts.engine, pool.calibration, riskyForStable)
+                    await expect(() => tx).to.updateSpotPrice(this.contracts.engine, pool.calibration, quoteForbase)
                   })
                 }
               )

@@ -11,7 +11,7 @@ import { createFixtureLoader } from 'ethereum-waffle'
 
 TestPools.forEach(function (pool: PoolState) {
   testContext(`withdraw from ${pool.description} pool`, function () {
-    const { decimalsRisky, decimalsStable } = pool.calibration
+    const { decimalsquote, decimalsbase } = pool.calibration
 
     let loadFixture: ReturnType<typeof createFixtureLoader>
     let signer: Wallet, other: Wallet
@@ -23,8 +23,8 @@ TestPools.forEach(function (pool: PoolState) {
     beforeEach(async function () {
       const fixture = await loadFixture(engineFixture)
       const { factory, factoryDeploy, router } = fixture
-      const { engine, risky, stable } = await fixture.createEngine(decimalsRisky, decimalsStable)
-      this.contracts = { factory, factoryDeploy, router, engine, risky, stable }
+      const { engine, quote, base } = await fixture.createEngine(decimalsquote, decimalsbase)
+      this.contracts = { factory, factoryDeploy, router, engine, quote, base }
 
       await useTokens(this.signers[0], this.contracts, pool.calibration)
       await useApproveAll(this.signers[0], this.contracts)
@@ -40,68 +40,68 @@ TestPools.forEach(function (pool: PoolState) {
     })
 
     describe('success cases', function () {
-      it('withdraws from stable tokens from margin', async function () {
-        const [delRisky, delStable] = [parseWei('0'), parseWei('998')]
-        await expect(() => this.contracts.router.withdraw(delRisky.raw, delStable.raw)).to.decreaseMargin(
+      it('withdraws from base tokens from margin', async function () {
+        const [delquote, delbase] = [parseWei('0'), parseWei('998')]
+        await expect(() => this.contracts.router.withdraw(delquote.raw, delbase.raw)).to.decreaseMargin(
           this.contracts.engine,
           this.contracts.router.address,
-          delRisky.raw,
-          delStable.raw
+          delquote.raw,
+          delbase.raw
         )
       })
 
-      it('withdraws from risky tokens from margin', async function () {
-        const [delRisky, delStable] = [parseWei('998'), parseWei('0')]
-        await expect(() => this.contracts.router.withdraw(delRisky.raw, delStable.raw)).to.decreaseMargin(
+      it('withdraws from quote tokens from margin', async function () {
+        const [delquote, delbase] = [parseWei('998'), parseWei('0')]
+        await expect(() => this.contracts.router.withdraw(delquote.raw, delbase.raw)).to.decreaseMargin(
           this.contracts.engine,
           this.contracts.router.address,
-          delRisky.raw,
-          delStable.raw
+          delquote.raw,
+          delbase.raw
         )
       })
 
       it('withdraws both tokens from the margin account', async function () {
-        const [delRisky, delStable] = [parseWei('999'), parseWei('998')]
-        await expect(() => this.contracts.router.withdraw(delRisky.raw, delStable.raw)).to.decreaseMargin(
+        const [delquote, delbase] = [parseWei('999'), parseWei('998')]
+        await expect(() => this.contracts.router.withdraw(delquote.raw, delbase.raw)).to.decreaseMargin(
           this.contracts.engine,
           this.contracts.router.address,
-          delRisky.raw,
-          delStable.raw
+          delquote.raw,
+          delbase.raw
         )
 
         const margin = await this.contracts.engine.margins(this.contracts.router.address)
 
-        expect(margin.balanceRisky).to.equal(parseWei('1').raw)
-        expect(margin.balanceStable).to.equal(parseWei('2').raw)
+        expect(margin.balancequote).to.equal(parseWei('1').raw)
+        expect(margin.balancebase).to.equal(parseWei('2').raw)
       })
 
       it('transfers both the tokens to msg.sender of withdraw', async function () {
-        const riskyBalance = await this.contracts.risky.balanceOf(this.signers[0].address)
-        const stableBalance = await this.contracts.stable.balanceOf(this.signers[0].address)
+        const quoteBalance = await this.contracts.quote.balanceOf(this.signers[0].address)
+        const baseBalance = await this.contracts.base.balanceOf(this.signers[0].address)
 
         await this.contracts.router.withdraw(parseWei('500').raw, parseWei('250').raw)
 
-        expect(await this.contracts.risky.balanceOf(this.signers[0].address)).to.equal(
-          riskyBalance.add(parseWei('500').raw)
+        expect(await this.contracts.quote.balanceOf(this.signers[0].address)).to.equal(
+          quoteBalance.add(parseWei('500').raw)
         )
 
-        expect(await this.contracts.stable.balanceOf(this.signers[0].address)).to.equal(
-          stableBalance.add(parseWei('250').raw)
+        expect(await this.contracts.base.balanceOf(this.signers[0].address)).to.equal(
+          baseBalance.add(parseWei('250').raw)
         )
       })
 
       it('transfers both the tokens to another recipient', async function () {
-        const riskyBalance = await this.contracts.risky.balanceOf(this.signers[2].address)
-        const stableBalance = await this.contracts.stable.balanceOf(this.signers[2].address)
+        const quoteBalance = await this.contracts.quote.balanceOf(this.signers[2].address)
+        const baseBalance = await this.contracts.base.balanceOf(this.signers[2].address)
 
         const recipient = this.signers[2]
         await expect(() =>
           this.contracts.router.withdrawToRecipient(recipient.address, parseWei('500').raw, parseWei('250').raw)
-        ).to.changeTokenBalances(this.contracts.risky, [recipient], [parseWei('500').raw])
+        ).to.changeTokenBalances(this.contracts.quote, [recipient], [parseWei('500').raw])
 
-        expect(await this.contracts.risky.balanceOf(recipient.address)).to.equal(riskyBalance.add(parseWei('500').raw))
-        expect(await this.contracts.stable.balanceOf(recipient.address)).to.equal(
-          stableBalance.add(parseWei('250').raw)
+        expect(await this.contracts.quote.balanceOf(recipient.address)).to.equal(quoteBalance.add(parseWei('500').raw))
+        expect(await this.contracts.base.balanceOf(recipient.address)).to.equal(
+          baseBalance.add(parseWei('250').raw)
         )
       })
 
