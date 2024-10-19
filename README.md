@@ -4,7 +4,7 @@
 
 The smart contract suite is forked from [@primitivefinance's](https://github.com/primitivefinance/rmm-core) open source `rmm-core` repository with modifications to how the the invariant is calculated to ensure robustness for any two arbitrary ERC-20 tokens. 
 
-**Underwriters** of call options earn the premium, "theta decay" that is paid by call option buyers. In the context of decentralized finance, these buyers are swappers who swap on the underlying liquidity. To optimize the premium earned by option sellers, a batch auction can be used to match buyers and sellers in a future implementation.
+**Underwriters** of call options earn the premium, "theta decay" that is paid by call option buyers. In the context of decentralized finance, these buyers are swappers who swap on the underlying liquidity. In the future, a batch auction can be implemented to match buyers and sellers. Thus, optimizing the premiums earned for option sellers.
 
 For each unique FX pair, an `engine` contract is deployed and follows the standard naming conventions seen in traditional FX markets (`base/quote`).
 
