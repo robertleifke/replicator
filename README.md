@@ -1,15 +1,13 @@
 # Replicator
 
 
-Replicator is a fork of the Primitive `rmm-core` smart contracts with some slight modifications to ensure robustness of the invariant for a staked ETH strategy and additional features to make it more user friendly.
+Replicator is a fork of @primitivefinance's open source `rmm-core` smart contracts with some slight modifications to ensure robustness of the invariant for a foreign currency pairs and additional features to make it more user friendly.
 
-# Documentation
-
-The contract documentation is hosted here: [Primitive Docs](https://docs.primitive.finance).
+The `replicator` enables anyone to earn sustainable yield via **theta decay** on any foreign currency pairs and simply by holding an ERC-20 token.
 
 # Testing
 
-## build contracts
+## Build contracts
 
 `forge build`
 
@@ -20,3 +18,6 @@ The contract documentation is hosted here: [Primitive Docs](https://docs.primiti
 # Security
 
 All audits are located in the `audits/` folder.
+
+# Deployments
+
